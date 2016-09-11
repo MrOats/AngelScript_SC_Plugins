@@ -7,12 +7,8 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 /*
-Current status: In Development, will not work at the moment.
-Desc: Helper class for creating Chat commands from your console commands.
-Documentation:
-Create a new object with your console command object as a parameter:
-  chatCommand chat_MyCommand=new chatCommand(CConCommand@ MyCommand);
-Chat Triggers should be created then, I hope idk, I'm working on this part haha.
+Current Status: In Development, will not work at the moment.
+Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/ChatTriggers.as
 */
 private string m_szConCMD;
 private string m_szPubPrefix;

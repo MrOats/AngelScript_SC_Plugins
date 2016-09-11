@@ -8,7 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 /*
 Current Status: Stable. New Features to be added.
-Description: Regenerates every player's health and armor based on values located in the Config section below.
+Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/PlayerRegen.as
 */
 CScheduledFunction@ pAPRegenTimer = null;
 CScheduledFunction@ pHPRegenTimer = null;
