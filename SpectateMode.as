@@ -6,6 +6,11 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+/*
+Current Status: In Development, does not work as wished. Can enter Observer Mode, but can't keep player inside it.
+Description: Plugin to put player in "Spectate Mode" upon ClientSay. Will keep player in Spectate Mode until
+map changes or they turn it off.
+*/
 void PluginInit()
 {
   g_Module.ScriptInfo.SetAuthor("MrOats");

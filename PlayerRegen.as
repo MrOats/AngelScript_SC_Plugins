@@ -6,6 +6,10 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
+/*
+Current Status: Stable. New Features to be added.
+Description: Regenerates every player's health and armor based on values located in the Config section below.
+*/
 CScheduledFunction@ pAPRegenTimer = null;
 CScheduledFunction@ pHPRegenTimer = null;
 //Config
