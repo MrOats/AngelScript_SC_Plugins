@@ -22,7 +22,7 @@ void PluginInit(){
 
   @g_pKeepSpec = g_Scheduler.SetInterval("CheckObserver",1,g_Scheduler.REPEAT_INFINITE_TIMES);
   }
-}
+
 HookReturnCode Decider(SayParameters@ pParams){
   CBasePlayer@ pPlayer = pParams.GetPlayer();
   const CCommand@ pArguments = pParams.GetArguments();
