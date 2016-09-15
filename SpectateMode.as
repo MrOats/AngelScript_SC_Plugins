@@ -12,7 +12,7 @@ Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/SpectateMod
 */
 CScheduledFunction@ g_pKeepSpec=null;
 const int g_MAXPLAYERS=g_Engine.maxClients;
-array<bool> pSpectatePlease={g_MAXPLAYERS,0};
+array<bool> pSpectatePlease={g_MAXPLAYERS,false};
 void PluginInit(){
   g_Module.ScriptInfo.SetAuthor("MrOats");
   g_Module.ScriptInfo.SetContactInfo("www.modriot.com");
