@@ -20,7 +20,7 @@ void PluginInit(){
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
 
 
-  @g_pKeepSpec = g_Scheduler.SetInterval("CheckObserver",1,g_Scheduler.REPEAT_INFINITE_TIMES);
+  @g_pKeepSpec = g_Scheduler.SetInterval("CheckObserver",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
   }
 
 HookReturnCode Decider(SayParameters@ pParams){
