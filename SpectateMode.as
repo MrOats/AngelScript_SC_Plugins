@@ -9,6 +9,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 /*
 Current Status: Stable, but in development.
 Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/SpectateMode.as
+Thank you to all those who have assisted me with this plugin!
 */
 CScheduledFunction@ g_pKeepSpec=null;
 const int g_MAXPLAYERS=g_Engine.maxClients;
