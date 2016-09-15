@@ -78,23 +78,3 @@ HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
   ExitSpectate(pPlayer);
   return HOOK_HANDLED;
 }
-
-//Found Snippet Below:
-/**
-* Shunts a player into observer mode if they're not already one.
-*/
-
-/*
-void MakeObserver( CBasePlayer@ pPlayer )
-{
-if( pPlayer is null )
-return;
-
-if( !pPlayer.GetObserver().IsObserver() )
-{
-pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
-
-g_EntityFuncs.FireTargets( pev.target, pPlayer, self, USE_TOGGLE );
-}
-}
-*/
