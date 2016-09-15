@@ -11,7 +11,7 @@ Current Status: In Development, does not work as wished. Can enter Observer Mode
 Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/SpectateMode.as
 */
 CScheduledFunction@ g_pKeepSpec=null;
-const int g_MAXPLAYERS=g_Engine.maxClients();
+const int g_MAXPLAYERS=g_Engine.maxClients;
 array<bool> pSpectatePlease={g_MAXPLAYERS,0};
 void PluginInit(){
   g_Module.ScriptInfo.SetAuthor("MrOats");
@@ -34,13 +34,13 @@ HookReturnCode Decider(SayParameters@ pParams){
   }
   else return HOOK_CONTINUE;*/
   if(pArguments.ArgC()==2){
-    if ((pArguments[0].FindArg("spectate"))&&(pArguments[1]=="on")) {
+    if ((pArguments[0]=="spectate")&&(pArguments[1]=="on")) {
       /*if(pArguments[0].FindArg("/"))
         set_ShouldHide(true);*/
       EnterSpectate(pPlayer);
       return HOOK_HANDLED;
     }
-    else if((pArguments[0].FindArg("spectate"))&&(pArguments[1]=="off")){
+    else if((pArguments[0]=="spectate")&&(pArguments[1]=="off")){
       /*if(pArguments[0].FindArg("/"))
         set_ShouldHide(true);*/
       ExitSpectate(pPlayer);
@@ -61,7 +61,7 @@ void EnterSpectate(CBasePlayer@ pPlayer)
 bool CheckObserver(){
   for (int i = 1; i <= g_MAXPLAYERS; i++) {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    if (pSpectatePlease[pPlayer.entindex()){
+    if (pSpectatePlease[pPlayer.entindex()]){
       if(!pPlayer.GetObserver().IsObserver()){
       pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
     }
