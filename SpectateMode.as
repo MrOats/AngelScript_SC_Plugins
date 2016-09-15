@@ -12,7 +12,7 @@ Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/SpectateMod
 */
 CScheduledFunction@ g_pKeepSpec=null;
 const int g_MAXPLAYERS=g_Engine.maxClients;
-array<bool> pSpectatePlease={g_MAXPLAYERS,false};
+array<bool> pSpectatePlease=(g_MAXPLAYERS,false);
 void PluginInit(){
   g_Module.ScriptInfo.SetAuthor("MrOats");
   g_Module.ScriptInfo.SetContactInfo("www.modriot.com");
@@ -58,15 +58,17 @@ void EnterSpectate(CBasePlayer@ pPlayer)
     pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
   }
 }
-bool CheckObserver(){
+void CheckObserver(CBasePlayer@ pPlayer){
   for (int i = 1; i <= g_MAXPLAYERS; i++) {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    if (pSpectatePlease[pPlayer.entindex()]){
-      if(!pPlayer.GetObserver().IsObserver()){
-      pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
-    }
-    }
+    if(pPlayer !is null){
+      if (pSpectatePlease[pPlayer.entindex()]){
+        if(!pPlayer.GetObserver().IsObserver()){
+        pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
+      }
+      }
   }
+}
 }
 void ExitSpectate(CBasePlayer@ pPlayer){
   g_Game.AlertMessage(at_console, "Exiting SpectateMode");
