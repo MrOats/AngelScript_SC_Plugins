@@ -10,11 +10,18 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 Current Status: In Development, does not work as wished. Can enter Observer Mode, but can't keep player inside it.
 Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/SpectateMode.as
 */
-void PluginInit()
-{
+CScheduledFunction@ g_pKeepSpec=null;
+const int g_MAXPLAYERS=g_Engine.maxClients();
+array<bool> pSpectatePlease={g_MAXPLAYERS,0};
+void PluginInit(){
   g_Module.ScriptInfo.SetAuthor("MrOats");
   g_Module.ScriptInfo.SetContactInfo("modriot.com");
   g_Hooks.RegisterHook(Hooks::Player::ClientSay,@Decider);
+  g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
+
+
+  @g_pKeepSpec = g_Scheduler.SetInterval("CheckObserver",1,g_Scheduler.REPEAT_INFINITE_TIMES);
+  }
 }
 HookReturnCode Decider(SayParameters@ pParams){
   CBasePlayer@ pPlayer = pParams.GetPlayer();
@@ -46,20 +53,30 @@ HookReturnCode Decider(SayParameters@ pParams){
 void EnterSpectate(CBasePlayer@ pPlayer)
 {
   g_Game.AlertMessage(at_console, "Entering SpectateMode");
-  if(pPlayer is null)
-  return;
-
+  pSpectatePlease[pPlayer.entindex()]=true;
   if(!pPlayer.GetObserver().IsObserver()){
   pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
-  pPlayer.set_m_flRespawnDelayTime(420);
+  //pPlayer.set_m_flRespawnDelayTime(420);
   //g_EntityFuncs.FireTargets( pev.target, pPlayer, self, USE_TOGGLE );
   }
 }
-void ExitSpectate(CBasePlayer@ pPlayer){
-  g_Game.AlertMessage(at_console, "Entering SpectateMode");
-
+bool CheckObserver(){
+  for (int i = 1; i <= g_MAXPLAYERS; i++) {
+    CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+    if (pSpectatePlease[pPlayer.entindex()){
+      if(!pPlayer.GetObserver().IsObserver()){
+      pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
+    }
+    }
+  }
 }
-
+void ExitSpectate(CBasePlayer@ pPlayer){
+  g_Game.AlertMessage(at_console, "Exiting SpectateMode");
+  pSpectatePlease[pPlayer.entindex()]=false;
+}
+HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
+  pSpectatePlease[pPlayer.entindex()]=false;
+}
 
 //Found Snippet Below:
 /**
