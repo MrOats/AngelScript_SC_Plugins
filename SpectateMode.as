@@ -7,7 +7,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
 /*
-Current Status: In Development, does not work as wished. Can enter Observer Mode, but can't keep player inside it.
+Current Status: Stable, but in development.
 Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/SpectateMode.as
 */
 CScheduledFunction@ g_pKeepSpec=null;
