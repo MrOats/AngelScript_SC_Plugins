@@ -15,7 +15,7 @@ const int g_MAXPLAYERS=g_Engine.maxClients();
 array<bool> pSpectatePlease={g_MAXPLAYERS,0};
 void PluginInit(){
   g_Module.ScriptInfo.SetAuthor("MrOats");
-  g_Module.ScriptInfo.SetContactInfo("modriot.com");
+  g_Module.ScriptInfo.SetContactInfo("www.modriot.com");
   g_Hooks.RegisterHook(Hooks::Player::ClientSay,@Decider);
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
 
@@ -35,14 +35,14 @@ HookReturnCode Decider(SayParameters@ pParams){
   else return HOOK_CONTINUE;*/
   if(pArguments.ArgC()==2){
     if ((pArguments[0].FindArg("spectate"))&&(pArguments[1]=="on")) {
-      if(pArguments[0].FindArg("/"))
-        set_ShouldHide(true);
+      /*if(pArguments[0].FindArg("/"))
+        set_ShouldHide(true);*/
       EnterSpectate(pPlayer);
       return HOOK_HANDLED;
     }
     else if((pArguments[0].FindArg("spectate"))&&(pArguments[1]=="off")){
-      if(pArguments[0].FindArg("/"))
-        set_ShouldHide(true);
+      /*if(pArguments[0].FindArg("/"))
+        set_ShouldHide(true);*/
       ExitSpectate(pPlayer);
       return HOOK_HANDLED;
     }
@@ -55,9 +55,7 @@ void EnterSpectate(CBasePlayer@ pPlayer)
   g_Game.AlertMessage(at_console, "Entering SpectateMode");
   pSpectatePlease[pPlayer.entindex()]=true;
   if(!pPlayer.GetObserver().IsObserver()){
-  pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
-  //pPlayer.set_m_flRespawnDelayTime(420);
-  //g_EntityFuncs.FireTargets( pev.target, pPlayer, self, USE_TOGGLE );
+    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
   }
 }
 bool CheckObserver(){
@@ -75,7 +73,8 @@ void ExitSpectate(CBasePlayer@ pPlayer){
   pSpectatePlease[pPlayer.entindex()]=false;
 }
 HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
-  pSpectatePlease[pPlayer.entindex()]=false;
+  ExitSpectate(pPlayer);
+  return HOOK_HANDLED;
 }
 
 //Found Snippet Below:
