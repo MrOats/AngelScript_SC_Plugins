@@ -68,7 +68,7 @@ void EnterSpectate(CBasePlayer@ pPlayer)
   g_Game.AlertMessage(at_console, "Entering SpectateMode");
   pSpectatePlease[pPlayer.entindex()]=true;
   if(!pPlayer.GetObserver().IsObserver()){
-    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false ); Surprisingly, this makes it work!
+    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
   }
 }
 void CheckObserver(){
@@ -87,8 +87,8 @@ void ExitSpectate(CBasePlayer@ pPlayer){
   g_Game.AlertMessage(at_console, "Exiting SpectateMode");
   pSpectatePlease[pPlayer.entindex()]=false;
   //Reset the player's respawn time by respawning and killing.
-  g_PlayerFuncs.PlayerRespawn(pPlayer,true,true);
-  pPlayer.GibMonster();
+  g_PlayerFuncs.RespawnPlayer(pPlayer,true,true);
+  g_AdminControl.KillPlayer(pPlayer,3);
 }
 HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
   ExitSpectate(pPlayer);
