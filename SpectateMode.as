@@ -16,7 +16,6 @@ CScheduledFunction@ g_pSetRespawn=null;
 const int g_MAXPLAYERS=g_Engine.maxClients;
 array<bool> pSpectatePlease(g_MAXPLAYERS,false);
 const float MAX_FLOAT=3.402823466*pow(10,38);
-<<<<<<< HEAD
 
 //Config
 
@@ -24,8 +23,6 @@ bool adminOnly=false;
 
 //End Config
 
-=======
->>>>>>> parent of 8ea4b20... Add admin only config. Defaulted to false
 void PluginInit(){
   g_Module.ScriptInfo.SetAuthor("MrOats");
   g_Module.ScriptInfo.SetContactInfo("www.modriot.com");
