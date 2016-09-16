@@ -12,6 +12,7 @@ Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/SpectateMod
 Thank you to all those who have assisted me with this plugin!
 */
 CScheduledFunction@ g_pKeepSpec=null;
+CScheduledFunction@ g_pSetRespawn=null;
 const int g_MAXPLAYERS=g_Engine.maxClients;
 array<bool> pSpectatePlease(g_MAXPLAYERS,false);
 const float MAX_FLOAT=3.402823466*pow(10,38);
@@ -23,6 +24,7 @@ void PluginInit(){
 
 
   @g_pKeepSpec = g_Scheduler.SetInterval("CheckObserver",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
+  @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
   }
 
 HookReturnCode Decider(SayParameters@ pParams){
@@ -52,13 +54,22 @@ HookReturnCode Decider(SayParameters@ pParams){
   }
   return HOOK_HANDLED;
 }
+void SetRespawnTime(){
+  for (int i = 1; i <= g_Engine.maxClients; i++) {
+    CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+    if((pPlayer !is null)&&(pSpectatePlease[pPlayer.entindex()])){
+      pPlayer.m_flRespawnDelayTime=MAX_FLOAT;
+    }
+  }
+}
+
 void EnterSpectate(CBasePlayer@ pPlayer)
 {
   g_Game.AlertMessage(at_console, "Entering SpectateMode");
   pSpectatePlease[pPlayer.entindex()]=true;
   if(!pPlayer.GetObserver().IsObserver()){
     pPlayer.m_flRespawnDelayTime=MAX_FLOAT;
-    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
+    //pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false ); Surprisingly, this makes it work!
   }
 }
 void CheckObserver(){
@@ -77,6 +88,9 @@ void CheckObserver(){
 void ExitSpectate(CBasePlayer@ pPlayer){
   g_Game.AlertMessage(at_console, "Exiting SpectateMode");
   pSpectatePlease[pPlayer.entindex()]=false;
+  //Reset the player's respawn time by respawning and killing.
+  pPlayer.Respawn();
+  pPlayer.GibMonster();
 }
 HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
   ExitSpectate(pPlayer);
