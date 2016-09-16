@@ -89,7 +89,7 @@ void ExitSpectate(CBasePlayer@ pPlayer){
   g_Game.AlertMessage(at_console, "Exiting SpectateMode");
   pSpectatePlease[pPlayer.entindex()]=false;
   //Reset the player's respawn time by respawning and killing.
-  pPlayer.Respawn();
+  g_PlayerFuncs.PlayerRespawn(pPlayer,true,true);
   pPlayer.GibMonster();
 }
 HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
