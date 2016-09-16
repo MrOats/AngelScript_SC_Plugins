@@ -19,7 +19,7 @@ const float MAX_FLOAT=3.402823466*pow(10,38);
 
 //Config
 
-bool adminOnly=false;
+bool adminOnly=true;
 
 //End Config
 
