@@ -68,8 +68,7 @@ void EnterSpectate(CBasePlayer@ pPlayer)
   g_Game.AlertMessage(at_console, "Entering SpectateMode");
   pSpectatePlease[pPlayer.entindex()]=true;
   if(!pPlayer.GetObserver().IsObserver()){
-    pPlayer.m_flRespawnDelayTime=MAX_FLOAT;
-    //pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false ); Surprisingly, this makes it work!
+    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false ); Surprisingly, this makes it work!
   }
 }
 void CheckObserver(){
@@ -78,7 +77,6 @@ void CheckObserver(){
     if(pPlayer !is null){
       if (pSpectatePlease[pPlayer.entindex()]){
         if(!pPlayer.GetObserver().IsObserver()){
-        pPlayer.m_flRespawnDelayTime=MAX_FLOAT; //Might be debatable to have this here. Since player will should only respawn at this point if checkpoint is reached or other force respawns them.
         pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
       }
       }
