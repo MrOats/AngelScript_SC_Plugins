@@ -33,6 +33,8 @@ if (HPRegen){
 if (APRegen){
   @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",AP_Regen_Delay,g_Scheduler.REPEAT_INFINITE_TIMES);
 }
+
+  g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
 }
 //Main Functions
 void GiveAP(){
@@ -50,4 +52,8 @@ void GiveHP(){
       pPlayer.pev.health+=HP_Regen_Amnt;
     }
   }
+}
+HookReturnCode EndTimerFuncs(){
+  g_Scheduler.ClearTimerList();
+  return HOOK_HANDLED;
 }

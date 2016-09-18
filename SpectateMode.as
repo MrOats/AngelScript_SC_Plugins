@@ -28,6 +28,7 @@ void PluginInit(){
   g_Module.ScriptInfo.SetContactInfo("www.modriot.com");
   g_Hooks.RegisterHook(Hooks::Player::ClientSay,@Decider);
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
+  g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
 
 
   @g_pKeepSpec = g_Scheduler.SetInterval("CheckObserver",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
@@ -99,5 +100,9 @@ void ExitSpectate(CBasePlayer@ pPlayer){
 }
 HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
   ExitSpectate(pPlayer);
+  return HOOK_HANDLED;
+}
+HookReturnCode EndTimerFuncs(){
+  g_Scheduler.ClearTimerList();
   return HOOK_HANDLED;
 }
