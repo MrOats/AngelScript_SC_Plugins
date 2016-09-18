@@ -24,7 +24,7 @@ int AP_Regen_Delay=3;
 void PluginInit(){
   //For use in Sven Coop, place inside 'scripts/plugins'.
   g_Module.ScriptInfo.SetAuthor("MrOats");
-  g_Module.ScriptInfo.SetContactInfo("www.modriot.com");
+  g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44242-Plugin-Player-Regen-(HP-and-AP-Regen)");
 
 
 if (HPRegen){

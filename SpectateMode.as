@@ -25,7 +25,7 @@ bool adminOnly=false;
 
 void PluginInit(){
   g_Module.ScriptInfo.SetAuthor("MrOats");
-  g_Module.ScriptInfo.SetContactInfo("www.modriot.com");
+  g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44306-Plugin-SpectateMode");
   g_Hooks.RegisterHook(Hooks::Player::ClientSay,@Decider);
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
   g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
