@@ -36,6 +36,10 @@ void PluginInit(){
 
 void toggleSpectate(const CCommand@ pArguments){
   CBasePlayer@ pPlayer=g_ConCommandSystem.GetCurrentPlayer();
+  /*if (pSpectatePlease[pPlayer.entindex()]) {
+    ExitSpectate(pPlayer);
+  }
+  else EnterSpectate(pPlayer);*/
   if(pArguments.ArgC()==2){
     if (pArguments[1]=="on") {
       /*if(pArguments[0].FindArg("/"))
@@ -82,5 +86,5 @@ HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
   return HOOK_HANDLED;
 }
 HookReturnCode EndTimerFuncs(){
-  g_Scheduler.ClearTimerL9st
+  g_Scheduler.ClearTimerList();
 }
