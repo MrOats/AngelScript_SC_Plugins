@@ -241,7 +241,7 @@ string PostVote(Dictionary votedmaps){
   for (uint i = 0; i < templist.length(); i++) {
     for (int x = 0; x < g_MAXPLAYERS; x--) {
       if (votedmaps.get(templist[i], x)) {
-
+        Test;
       }
     }
     }
