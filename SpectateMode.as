@@ -16,7 +16,7 @@ CScheduledFunction@ g_pSetRespawn=null;
 const int g_MAXPLAYERS=g_Engine.maxClients;
 array<bool> pSpectatePlease(g_MAXPLAYERS,false);
 const float MAX_FLOAT=3.402823466*pow(10,38);
-
+CClientCommand spectate( "spectate", "Say \"spectate on\" to turn on and \"spectate off\" to turn off", @toggleSpectate );
 //Config
 
 bool adminOnly=false;
@@ -26,7 +26,6 @@ bool adminOnly=false;
 void PluginInit(){
   g_Module.ScriptInfo.SetAuthor("MrOats");
   g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44306-Plugin-SpectateMode");
-  g_Hooks.RegisterHook(Hooks::Player::ClientSay,@Decider);
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
   g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
 
@@ -35,38 +34,18 @@ void PluginInit(){
   @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
   }
 
-HookReturnCode Decider(SayParameters@ pParams){
-  CBasePlayer@ pPlayer = pParams.GetPlayer();
-  const CCommand@ pArguments = pParams.GetArguments();
-  /*if (pArguments[0].FindArg("/")) {
-    pParams.set_ShouldHide(true);
-  }
-  else if (pArguments[0].FindArg("!")) {
-
-  }
-  else return HOOK_CONTINUE;*/
+void toggleSpectate(const CCommand@ pArguments){
+  CBasePlayer@ pPlayer=g_ConCommandSystem.GetCurrentPlayer();
   if(pArguments.ArgC()==2){
-    if ((pArguments[0]=="spectate")&&(pArguments[1]=="on")) {
+    if (pArguments[1]=="on") {
       /*if(pArguments[0].FindArg("/"))
         set_ShouldHide(true);*/
       EnterSpectate(pPlayer);
-      return HOOK_HANDLED;
     }
-    else if((pArguments[0]=="spectate")&&(pArguments[1]=="off")){
+    else if(pArguments[1]=="off"){
       /*if(pArguments[0].FindArg("/"))
         set_ShouldHide(true);*/
       ExitSpectate(pPlayer);
-      return HOOK_HANDLED;
-    }
-    else return HOOK_CONTINUE;
-  }
-  return HOOK_HANDLED;
-}
-void SetRespawnTime(){
-  for (int i = 1; i <= g_Engine.maxClients; i++) {
-    CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    if((pPlayer !is null)&&(pSpectatePlease[pPlayer.entindex()])){
-      pPlayer.m_flRespawnDelayTime=MAX_FLOAT;
     }
   }
 }
@@ -103,6 +82,5 @@ HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer){
   return HOOK_HANDLED;
 }
 HookReturnCode EndTimerFuncs(){
-  g_Scheduler.ClearTimerList();
-  return HOOK_HANDLED;
+  g_Scheduler.ClearTimerL9st
 }
