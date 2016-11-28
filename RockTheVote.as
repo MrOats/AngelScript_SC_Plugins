@@ -29,9 +29,7 @@ dictionary rtvVotes;
 const int g_MAXPLAYERS=g_Engine.maxClients;
 int rtvRequired;
 int highest = 0;
-int highestIndex = -1;
 int secondHighest = 0;
-int secondHighestIndex = -1;
 
 //Timers/Schedulers
 CScheduledFunction@ g_TimeToVote=null;
@@ -237,13 +235,37 @@ g_EngineFuncs.ServerCommand("changelevel " + rtvList[highestIndex] + "\n");
 }
 
 string PostVote(Dictionary votedmaps){
-  array<string> templist=votedmaps.getKeys();
+  uint length=votedmaps.GetSize();
+  array<int> myvalues(length);
+  array<string> mykeys=votedmaps.getKeys();
+  array<int> sortedvalues(length);
+  for (uint i = 0; i < length; i++) {
+    myvalues[i]=votedmaps[mykeys[i]];
+  }
+  sortedvalues=myvalues.sortDesc();
+  for (uint i = 0; i < myvalues.length(); i++)
+    for (uint x = 0; x < length; x++)
+      if (mydict[mykeys[i]]==myvalues[x]) {
+        mydict.set(mykeys[i],myvalues[x]);
+        myvalues.removeAt(x);
+        length--;
+      }
+  /*array<string> templist;
+  array<
+  for (uint i = 0; i < votedmaps.GetSize()< ; i++) {
+    templist[i]=votedmaps[i];
+  }
+  templist.sortDesc();
+  highest=templist[0];
+  secondHighest=templist[1];
   for (uint i = 0; i < templist.length(); i++) {
-    for (int x = 0; x < g_MAXPLAYERS; x--) {
-      if (votedmaps.get(templist[i], x)) {
-        Test;
+    for (int x = 0; (x < g_MAXPLAYERS)>0; x--) {
+      if ((votedmaps.get(templist[i], x))&&(highestIndex==0)) {
+        highestIndex=templist[i];
+      }
+      else if ((secondHighest==0)&&(highestIndex>0)) {
+
       }
     }
-    }
+    }*/
   }
-}
