@@ -36,22 +36,18 @@ void PluginInit(){
 
 void toggleSpectate(const CCommand@ pArguments){
   CBasePlayer@ pPlayer=g_ConCommandSystem.GetCurrentPlayer();
-  /*if (pSpectatePlease[pPlayer.entindex()]) {
+  if (pSpectatePlease[pPlayer.entindex()]) {
     ExitSpectate(pPlayer);
   }
-  else EnterSpectate(pPlayer);*/
-  if(pArguments.ArgC()==2){
+  else EnterSpectate(pPlayer);
+  /*if(pArguments.ArgC()==2){
     if (pArguments[1]=="on") {
-      /*if(pArguments[0].FindArg("/"))
-        set_ShouldHide(true);*/
       EnterSpectate(pPlayer);
     }
     else if(pArguments[1]=="off"){
-      /*if(pArguments[0].FindArg("/"))
-        set_ShouldHide(true);*/
       ExitSpectate(pPlayer);
     }
-  }
+  }*/
 }
 
 void EnterSpectate(CBasePlayer@ pPlayer)
