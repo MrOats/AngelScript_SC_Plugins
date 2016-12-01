@@ -44,14 +44,6 @@ void toggleSpectate(const CCommand@ pArguments)
   else EnterSpectate(pPlayer);
 }
 
-void EnterSpectate(CBasePlayer@ pPlayer)
-{
-  g_Game.AlertMessage(at_console, "Entering SpectateMode");
-  pSpectatePlease[pPlayer.entindex()]=true;
-
-  if(!pPlayer.GetObserver().IsObserver())
-    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
-}
 
 void CheckObserver()
 {
@@ -74,6 +66,19 @@ void SetRespawnTime()
       pPlayer.m_flRespawnDelayTime=MAX_FLOAT;
   }
 }
+
+void EnterSpectate(CBasePlayer@ pPlayer)
+{
+  if(adminOnly&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
+    pSpectatePlease[pPlayer.entindex()]=true;
+  else if(!adminOnly)
+    pSpectatePlease[pPlayer.entindex()]=true;
+
+  //Sorta unnecessary below bewlow
+  /*if(!pPlayer.GetObserver().IsObserver())
+  pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );*/
+}
+
 void ExitSpectate(CBasePlayer@ pPlayer)
 {
   g_Game.AlertMessage(at_console, "Exiting SpectateMode");
