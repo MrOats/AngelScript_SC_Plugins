@@ -35,7 +35,7 @@ void PluginInit()
   @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
 }
 
-void MapInit
+void MapInit()
 {
   pSpectatePlease.deleteAll();
 }
@@ -43,7 +43,8 @@ void MapInit
 void toggleSpectate(const CCommand@ pArguments)
 {
   CBasePlayer@ pPlayer=g_ConCommandSystem.GetCurrentPlayer();
-  if (bool(pSpectatePlease[pPlayer.entindex()])==true)
+  string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
+  if (bool(pSpectatePlease[playerID])==true)
     ExitSpectate(pPlayer);
   else EnterSpectate(pPlayer);
 }
@@ -54,9 +55,9 @@ void CheckObserver()
   for (int i = 1; i <= g_MAXPLAYERS; i++)
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-
+    string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
     if(pPlayer !is null)
-      if((!pPlayer.GetObserver().IsObserver())&&(bool(pSpectatePlease[pPlayer.entindex()])==true))
+      if((!pPlayer.GetObserver().IsObserver())&&(bool(pSpectatePlease[playerID)==true))
           pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
   }
 }
@@ -66,17 +67,19 @@ void SetRespawnTime()
   for (int i = 1; i <= g_Engine.maxClients; i++)
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    if((pPlayer !is null)&&(bool(pSpectatePlease[pPlayer.entindex()])==true))
+    string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
+    if((pPlayer !is null)&&(bool(pSpectatePlease[playerID))==true))
       pPlayer.m_flRespawnDelayTime=MAX_FLOAT;
   }
 }
 
 void EnterSpectate(CBasePlayer@ pPlayer)
 {
+  string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
   if(adminOnly&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
-    pSpectatePlease.set(pPlayer.entindex(),true);
+    pSpectatePlease.set(playerID,true);
   else if(!adminOnly)
-    pSpectatePlease.set(pPlayer.entindex(),true);
+    pSpectatePlease.set(playerID,true);
 
   //Sorta unnecessary below bewlow
   /*if(!pPlayer.GetObserver().IsObserver())
@@ -86,7 +89,8 @@ void EnterSpectate(CBasePlayer@ pPlayer)
 void ExitSpectate(CBasePlayer@ pPlayer)
 {
   g_Game.AlertMessage(at_console, "Exiting SpectateMode");
-  pSpectatePlease.set(pPlayer.entindex(),false);
+  string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
+  pSpectatePlease.set(playerID,false);
   //Reset the player's respawn time by respawning and killing.
   g_PlayerFuncs.RespawnPlayer(pPlayer,true,true);
   g_AdminControl.KillPlayer(pPlayer,3);
