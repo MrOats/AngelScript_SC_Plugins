@@ -14,7 +14,7 @@ Thank you to all those who have assisted me with this plugin!
 CScheduledFunction@ g_pKeepSpec=null;
 CScheduledFunction@ g_pSetRespawn=null;
 const int g_MAXPLAYERS=g_Engine.maxClients;
-array<bool> pSpectatePlease(g_MAXPLAYERS,false);
+dictionary pSpectatePlease;
 const float MAX_FLOAT=Math.FLOAT_MAX;
 CClientCommand spectate("spectate", "Say \"spectate on\" to turn on and \"spectate off\" to turn off", @toggleSpectate );
 //Config
@@ -35,11 +35,15 @@ void PluginInit()
   @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
 }
 
+void MapInit
+{
+  pSpectatePlease.deleteAll();
+}
+
 void toggleSpectate(const CCommand@ pArguments)
 {
   CBasePlayer@ pPlayer=g_ConCommandSystem.GetCurrentPlayer();
-
-  if (pSpectatePlease[pPlayer.entindex()])
+  if (bool(pSpectatePlease[pPlayer.entindex()])==true)
     ExitSpectate(pPlayer);
   else EnterSpectate(pPlayer);
 }
@@ -52,7 +56,7 @@ void CheckObserver()
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
 
     if(pPlayer !is null)
-      if((!pPlayer.GetObserver().IsObserver())&&(pSpectatePlease[pPlayer.entindex()]))
+      if((!pPlayer.GetObserver().IsObserver())&&(bool(pSpectatePlease[pPlayer.entindex()])==true))
           pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
   }
 }
@@ -62,7 +66,7 @@ void SetRespawnTime()
   for (int i = 1; i <= g_Engine.maxClients; i++)
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    if((pPlayer !is null)&&(pSpectatePlease[pPlayer.entindex()]))
+    if((pPlayer !is null)&&(bool(pSpectatePlease[pPlayer.entindex()])==true))
       pPlayer.m_flRespawnDelayTime=MAX_FLOAT;
   }
 }
@@ -70,9 +74,9 @@ void SetRespawnTime()
 void EnterSpectate(CBasePlayer@ pPlayer)
 {
   if(adminOnly&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
-    pSpectatePlease[pPlayer.entindex()]=true;
+    pSpectatePlease.set(pPlayer.entindex(),true);
   else if(!adminOnly)
-    pSpectatePlease[pPlayer.entindex()]=true;
+    pSpectatePlease.set(pPlayer.entindex(),true);
 
   //Sorta unnecessary below bewlow
   /*if(!pPlayer.GetObserver().IsObserver())
@@ -82,7 +86,7 @@ void EnterSpectate(CBasePlayer@ pPlayer)
 void ExitSpectate(CBasePlayer@ pPlayer)
 {
   g_Game.AlertMessage(at_console, "Exiting SpectateMode");
-  pSpectatePlease[pPlayer.entindex()]=false;
+  pSpectatePlease.set(pPlayer.entindex(),false);
   //Reset the player's respawn time by respawning and killing.
   g_PlayerFuncs.RespawnPlayer(pPlayer,true,true);
   g_AdminControl.KillPlayer(pPlayer,3);
