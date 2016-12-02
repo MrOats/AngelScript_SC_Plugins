@@ -146,7 +146,7 @@ void GiveAP()
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
     if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-      if(!(pPlayer.pev.armorvalue>=g_AP_Regen_Amnt.GetInt()))
+      if(!(pPlayer.pev.armorvalue>=g_AP_Regen_Max.GetInt()))
         pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
   }
 
@@ -159,7 +159,7 @@ void GiveHP()
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
     if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-      if(!(pPlayer.pev.health>=g_HP_Regen_Amnt.GetInt()))
+      if(!(pPlayer.pev.health>=g_HP_Regen_Max.GetInt()))
         pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
   }
 
