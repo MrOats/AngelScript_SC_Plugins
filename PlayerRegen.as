@@ -47,9 +47,16 @@ void PluginInit()
   @g_AP_Regen_Max=CCVar("apmax", 100, "Max amount of armor player should have", ConCommandFlag::AdminOnly);
 
   if(g_HPRegenTimer !is null)
+  {
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
+    @g_HPRegenTimer=null;
+  }
+
   if(g_APRegenTimer !is null)
+  {
     g_Scheduler.RemoveTimer(g_APRegenTimer);
+    @g_APRegenTimer=null;
+  }
 
   if (g_HPRegen.GetBool())
     @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
@@ -61,9 +68,16 @@ void MapInit()
 {
 
   if(g_HPRegenTimer !is null)
+  {
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
+    @g_HPRegenTimer=null;
+  }
+
   if(g_APRegenTimer !is null)
+  {
     g_Scheduler.RemoveTimer(g_APRegenTimer);
+    @g_APRegenTimer=null;
+  }
 
   if (g_HPRegen.GetBool())
     @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
@@ -75,9 +89,11 @@ void MapInit()
 void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
 
-  g_Scheduler.RemoveTimer(g_HPRegenTimer);
   if (!(g_HPRegen.GetBool()))
+  {
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
+    @g_HPRegenTimer=null;
+  }
   else @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
@@ -87,8 +103,12 @@ void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
   g_Scheduler.RemoveTimer(g_APRegenTimer);
   if (!(g_APRegen.GetBool()))
+  {
     g_Scheduler.RemoveTimer(g_APRegenTimer);
+    @g_APRegenTimer=null;
+  }
   else @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+
 
 }
 
@@ -96,7 +116,8 @@ void delayHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
 
   g_Scheduler.RemoveTimer(g_HPRegenTimer);
-  @g_APRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+  @g_HPRegenTimer=null;
+  @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
 
@@ -104,6 +125,7 @@ void delayAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
 
   g_Scheduler.RemoveTimer(g_APRegenTimer);
+  @g_APRegenTimer=null;
   @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
@@ -146,23 +168,18 @@ HookReturnCode EndTimerFuncs()
 {
 
   g_Scheduler.ClearTimerList();
+  @g_HPRegenTimer = null;
+  @g_APRegenTimer = null;
 
-  if(g_HPRegen.GetDefaultValue()!="true")
-    g_HPRegen.SetBool(true);
-  if(g_HP_Regen_Amnt.GetDefaultValue()!="1")
-    g_HP_Regen_Amnt.SetInt(1);
-  if(g_HP_Regen_Delay.GetDefaultValue()!="3.0f")
-    g_HP_Regen_Delay.SetFloat(3.0f);
-  if(g_HP_Regen_Max.GetDefaultValue()!="100")
-    g_HP_Regen_Max.SetInt(100);
-  if(g_APRegen.GetDefaultValue()!="true")
-    g_APRegen.SetBool(true);
-  if(g_AP_Regen_Amnt.GetDefaultValue()!="1")
-    g_AP_Regen_Amnt.SetInt(1);
-  if(g_AP_Regen_Delay.GetDefaultValue()!="3.0f")
-    g_AP_Regen_Delay.SetFloat(3.0f);
-  if(g_AP_Regen_Max.GetDefaultValue()!="100")
-  g_AP_Regen_Max.SetInt(100);
+  g_HPRegen.SetString("true");
+  g_HP_Regen_Amnt.SetString("1");
+  g_HP_Regen_Delay.SetString("3.0f");
+  g_HP_Regen_Max.SetString("100");
+  g_APRegen.SetString("true");
+  g_AP_Regen_Amnt.SetString("1");
+  g_AP_Regen_Delay.SetString("3.0f");
+  g_AP_Regen_Max.SetString("100");
+
   return HOOK_HANDLED;
 
 }
