@@ -234,7 +234,7 @@ g_EngineFuncs.ServerCommand("changelevel " + rtvList[highestIndex] + "\n");
 }
 }
 
-string PostVote(Dictionary votedmaps){
+string PostVote(dictionary votedmaps){
   uint length=votedmaps.GetSize();
   array<int> myvalues(length);
   array<string> mykeys=votedmaps.getKeys();
