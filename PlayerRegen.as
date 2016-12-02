@@ -36,6 +36,7 @@ void PluginInit()
   g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@SetMax);
 
+  //DO NOT CHANGE DEFAULT VALUES.
   @g_HPRegen=CCVar("hpregen", true, "Enable or Disable HP Regen", ConCommandFlag::AdminOnly,@toggleHP);
   @g_HP_Regen_Amnt=CCVar("hpamnt", 1, "How much HP to regen per delay", ConCommandFlag::AdminOnly);
   @g_HP_Regen_Delay=CCVar("hpdelay", 3.0f, "Delay before giving HP again", ConCommandFlag::AdminOnly,@delayHP);
@@ -58,14 +59,18 @@ void PluginInit()
 
 void MapInit()
 {
-  g_HPRegen.SetBool(g_HPRegen.GetBool(g_HPRegen.GetDefaultValue()));
-  g_HP_Regen_Amnt.SetInt(g_HP_Regen_Amnt.GetInt(g_HP_Regen_Amnt.GetDefaultValue()));
-  g_HP_Regen_Delay.SetFloat(g_HP_Regen_Delay.GetFloat(g_HP_Regen_Delay.GetDefaultValue()));
-  g_HP_Regen_Max.SetInt(g_HP_Regen_Max.GetBool(g_HP_Regen_Max.GetDefaultValue()));
-  g_APRegen.SetBool(g_APRegen.GetBool(g_APRegen.GetDefaultValue()));
-  g_AP_Regen_Amnt.SetInt(g_AP_Regen_Amnt.GetInt(g_AP_Regen_Amnt.GetDefaultValue()));
-  g_AP_Regen_Delay.SetFloat(g_AP_Regen_Delay.GetFloat(g_AP_Regen_Delay.GetDefaultValue()));
-  g_AP_Regen_Max.SetInt(g_AP_Regen_Max.GetInt(g_HPRegen.GetDefaultValue()));
+
+  if(g_HPRegen.GetDefaultValue()!="true")
+    g_HPRegen.SetBool(true);
+  if(g_HP_Regen_Amnt.GetDefaultValue()!="1")
+    g_HP_Regen_Amnt.SetInt(1);
+  if(g_HP_Regen_Delay.GetDefaultValue()!="3.0f")
+    g_HP_Regen_Delay.SetFloat(3.0f);
+  //g_HP_Regen_Max.SetInt(g_HP_Regen_Max.GetBool(g_HP_Regen_Max.GetDefaultValue()));
+  //g_APRegen.SetBool(g_APRegen.GetBool(g_APRegen.GetDefaultValue()));
+  //g_AP_Regen_Amnt.SetInt(g_AP_Regen_Amnt.GetInt(g_AP_Regen_Amnt.GetDefaultValue()));
+  //g_AP_Regen_Delay.SetFloat(g_AP_Regen_Delay.GetFloat(g_AP_Regen_Delay.GetDefaultValue()));
+  //g_AP_Regen_Max.SetInt(g_AP_Regen_Max.GetInt(g_HPRegen.GetDefaultValue()));
 
   if(g_HPRegenTimer !is null)
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
