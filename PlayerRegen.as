@@ -39,11 +39,11 @@ void PluginInit()
   //DO NOT CHANGE DEFAULT VALUES.
   @g_HPRegen=CCVar("hpregen", true, "Enable or Disable HP Regen", ConCommandFlag::AdminOnly,@toggleHP);
   @g_HP_Regen_Amnt=CCVar("hpamnt", 1, "How much HP to regen per delay", ConCommandFlag::AdminOnly);
-  @g_HP_Regen_Delay=CCVar("hpdelay", 3.0f, "Delay before giving HP again", ConCommandFlag::AdminOnly,@delayHP);
+  @g_HP_Regen_Delay=CCVar("hpdelay", 3.0, "Delay before giving HP again", ConCommandFlag::AdminOnly,@delayHP);
   @g_HP_Regen_Max=CCVar("hpmax", 100, "Max amount of health player should have", ConCommandFlag::AdminOnly);
   @g_APRegen=CCVar("apregen", true, "Enable or Disable AP Regen", ConCommandFlag::AdminOnly,@toggleAP);
   @g_AP_Regen_Amnt=CCVar("apamnt", 1, "How much AP to regen per delay", ConCommandFlag::AdminOnly);
-  @g_AP_Regen_Delay=CCVar("apdelay", 3.0f, "Delay before giving AP again", ConCommandFlag::AdminOnly,@delayAP);
+  @g_AP_Regen_Delay=CCVar("apdelay", 3.0, "Delay before giving AP again", ConCommandFlag::AdminOnly,@delayAP);
   @g_AP_Regen_Max=CCVar("apmax", 100, "Max amount of armor player should have", ConCommandFlag::AdminOnly);
 
   if(g_HPRegenTimer !is null)
@@ -64,18 +64,23 @@ void MapInit()
     g_HPRegen.SetBool(true);
   if(g_HP_Regen_Amnt.GetDefaultValue()!="1")
     g_HP_Regen_Amnt.SetInt(1);
-  if(g_HP_Regen_Delay.GetDefaultValue()!="3.0f")
-    g_HP_Regen_Delay.SetFloat(3.0f);
-  //g_HP_Regen_Max.SetInt(g_HP_Regen_Max.GetBool(g_HP_Regen_Max.GetDefaultValue()));
-  //g_APRegen.SetBool(g_APRegen.GetBool(g_APRegen.GetDefaultValue()));
-  //g_AP_Regen_Amnt.SetInt(g_AP_Regen_Amnt.GetInt(g_AP_Regen_Amnt.GetDefaultValue()));
-  //g_AP_Regen_Delay.SetFloat(g_AP_Regen_Delay.GetFloat(g_AP_Regen_Delay.GetDefaultValue()));
-  //g_AP_Regen_Max.SetInt(g_AP_Regen_Max.GetInt(g_HPRegen.GetDefaultValue()));
+  if(g_HP_Regen_Delay.GetDefaultValue()!="3.0")
+    g_HP_Regen_Delay.SetFloat(3.0);
+  if(g_HP_Regen_Max.GetDefaultValue()!="100")
+    g_HP_Regen_Max.SetInt(100);
+  if(g_APRegen.GetDefaultValue()!="true")
+    g_APRegen.SetBool(true);
+  if(g_AP_Regen_Amnt.GetDefaultValue()!="1")
+    g_AP_Regen_Amnt.SetInt(1);
+  if(g_AP_Regen_Delay.GetDefaultValue()!="3.0")
+    g_AP_Regen_Delay.SetFloat(3.0);
+  if(g_AP_Regen_Max.GetDefaultValue()!="100")
+  g_AP_Regen_Max.SetInt(100);
 
   if(g_HPRegenTimer !is null)
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
   if(g_APRegenTimer !is null)
-		g_Scheduler.RemoveTimer(g_APRegenTimer);
+    g_Scheduler.RemoveTimer(g_APRegenTimer);
 
   if (g_HPRegen.GetBool())
     @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
@@ -86,7 +91,7 @@ void MapInit()
 //Adjust Timers
 void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
-
+  g_Scheduler.RemoveTimer(g_HPRegenTimer);
   if (!(g_HPRegen.GetBool()))
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
   else @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
@@ -95,7 +100,7 @@ void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
 void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
-
+  g_Scheduler.RemoveTimer(g_APRegenTimer);
   if (!(g_APRegen.GetBool()))
     g_Scheduler.RemoveTimer(g_APRegenTimer);
   else @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
@@ -104,14 +109,14 @@ void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
 void delayHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
-
+  g_Scheduler.RemoveTimer(g_HPRegenTimer);
   @g_APRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
 
 void delayAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
-
+  g_Scheduler.RemoveTimer(g_APRegenTimer);
   @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
