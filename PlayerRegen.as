@@ -60,23 +60,6 @@ void PluginInit()
 void MapInit()
 {
 
-  if(g_HPRegen.GetDefaultValue()!="true")
-    g_HPRegen.SetBool(true);
-  if(g_HP_Regen_Amnt.GetDefaultValue()!="1")
-    g_HP_Regen_Amnt.SetInt(1);
-  if(g_HP_Regen_Delay.GetDefaultValue()!="3.0")
-    g_HP_Regen_Delay.SetFloat(3.0);
-  if(g_HP_Regen_Max.GetDefaultValue()!="100")
-    g_HP_Regen_Max.SetInt(100);
-  if(g_APRegen.GetDefaultValue()!="true")
-    g_APRegen.SetBool(true);
-  if(g_AP_Regen_Amnt.GetDefaultValue()!="1")
-    g_AP_Regen_Amnt.SetInt(1);
-  if(g_AP_Regen_Delay.GetDefaultValue()!="3.0")
-    g_AP_Regen_Delay.SetFloat(3.0);
-  if(g_AP_Regen_Max.GetDefaultValue()!="100")
-  g_AP_Regen_Max.SetInt(100);
-
   if(g_HPRegenTimer !is null)
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
   if(g_APRegenTimer !is null)
@@ -91,6 +74,7 @@ void MapInit()
 //Adjust Timers
 void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
+
   g_Scheduler.RemoveTimer(g_HPRegenTimer);
   if (!(g_HPRegen.GetBool()))
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
@@ -100,6 +84,7 @@ void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
 void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
+
   g_Scheduler.RemoveTimer(g_APRegenTimer);
   if (!(g_APRegen.GetBool()))
     g_Scheduler.RemoveTimer(g_APRegenTimer);
@@ -109,6 +94,7 @@ void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
 void delayHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
+
   g_Scheduler.RemoveTimer(g_HPRegenTimer);
   @g_APRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
@@ -116,6 +102,7 @@ void delayHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
 void delayAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
+
   g_Scheduler.RemoveTimer(g_APRegenTimer);
   @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
@@ -145,6 +132,7 @@ void GiveAP()
 
 void GiveHP()
 {
+
   for (int i = 1; i <= g_MAXPLAYERS; i++)
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
@@ -158,6 +146,23 @@ HookReturnCode EndTimerFuncs()
 {
 
   g_Scheduler.ClearTimerList();
+
+  if(g_HPRegen.GetDefaultValue()!="true")
+    g_HPRegen.SetBool(true);
+  if(g_HP_Regen_Amnt.GetDefaultValue()!="1")
+    g_HP_Regen_Amnt.SetInt(1);
+  if(g_HP_Regen_Delay.GetDefaultValue()!="3.0f")
+    g_HP_Regen_Delay.SetFloat(3.0f);
+  if(g_HP_Regen_Max.GetDefaultValue()!="100")
+    g_HP_Regen_Max.SetInt(100);
+  if(g_APRegen.GetDefaultValue()!="true")
+    g_APRegen.SetBool(true);
+  if(g_AP_Regen_Amnt.GetDefaultValue()!="1")
+    g_AP_Regen_Amnt.SetInt(1);
+  if(g_AP_Regen_Delay.GetDefaultValue()!="3.0f")
+    g_AP_Regen_Delay.SetFloat(3.0f);
+  if(g_AP_Regen_Max.GetDefaultValue()!="100")
+  g_AP_Regen_Max.SetInt(100);
   return HOOK_HANDLED;
 
 }
