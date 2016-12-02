@@ -36,14 +36,14 @@ void PluginInit()
   g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@SetMax);
 
-  @g_HPRegen=CCVar("hpregen", true, "Enable or Disable HP Regen",  ConCommandFlag::AdminOnly);
-  @g_HP_Regen_Amnt=CCVar("hpamnt", 1, "How much HP to regen per delay",  ConCommandFlag::AdminOnly);
-  @g_HP_Regen_Delay=CCVar("hpdelay", 3.0f, "Delay before giving HP again",  ConCommandFlag::AdminOnly);
-  @g_HP_Regen_Max=CCVar("hpmax", 100, "Max amount of health player should have",  ConCommandFlag::AdminOnly);
-  @g_APRegen=CCVar("apregen", true, "Enable or Disable AP Regen",  ConCommandFlag::AdminOnly);
-  @g_AP_Regen_Amnt=CCVar("apamnt", 1, "How much AP to regen per delay",  ConCommandFlag::AdminOnly);
-  @g_AP_Regen_Delay=CCVar("apdelay", 3.0f, "Delay before giving AP again",  ConCommandFlag::AdminOnly);
-  @g_AP_Regen_Max=CCVar("apmax", 100, "Max amount of armor player should have",  ConCommandFlag::AdminOnly);
+  @g_HPRegen=CCVar("hpregen", true, "Enable or Disable HP Regen", ConCommandFlag::AdminOnly,@toggleHP);
+  @g_HP_Regen_Amnt=CCVar("hpamnt", 1, "How much HP to regen per delay", ConCommandFlag::AdminOnly);
+  @g_HP_Regen_Delay=CCVar("hpdelay", 3.0f, "Delay before giving HP again", ConCommandFlag::AdminOnly,@delayHP);
+  @g_HP_Regen_Max=CCVar("hpmax", 100, "Max amount of health player should have", ConCommandFlag::AdminOnly);
+  @g_APRegen=CCVar("apregen", true, "Enable or Disable AP Regen", ConCommandFlag::AdminOnly,@toggleAP);
+  @g_AP_Regen_Amnt=CCVar("apamnt", 1, "How much AP to regen per delay", ConCommandFlag::AdminOnly);
+  @g_AP_Regen_Delay=CCVar("apdelay", 3.0f, "Delay before giving AP again", ConCommandFlag::AdminOnly,@delayAP);
+  @g_AP_Regen_Max=CCVar("apmax", 100, "Max amount of armor player should have", ConCommandFlag::AdminOnly);
 
   if(g_HPRegenTimer !is null)
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
@@ -51,13 +51,21 @@ void PluginInit()
     g_Scheduler.RemoveTimer(g_APRegenTimer);
 
   if (g_HPRegen.GetBool())
-    @pHPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+    @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
   if (g_APRegen.GetBool())
-    @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+    @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 }
 
 void MapInit()
 {
+  g_HPRegen.SetBool(g_HPRegen.GetBool(g_HPRegen.GetDefaultValue()));
+  g_HP_Regen_Amnt.SetInt(g_HP_Regen_Amnt.GetInt(g_HP_Regen_Amnt.GetDefaultValue()));
+  g_HP_Regen_Delay.SetFloat(g_HP_Regen_Delay.GetFloat(g_HP_Regen_Delay.GetDefaultValue()));
+  g_HP_Regen_Max.SetInt(g_HP_Regen_Max.GetBool(g_HP_Regen_Max.GetDefaultValue()));
+  g_APRegen.SetBool(g_APRegen.GetBool(g_APRegen.GetDefaultValue()));
+  g_AP_Regen_Amnt.SetInt(g_AP_Regen_Amnt.GetInt(g_AP_Regen_Amnt.GetDefaultValue()));
+  g_AP_Regen_Delay.SetFloat(g_AP_Regen_Delay.GetFloat(g_AP_Regen_Delay.GetDefaultValue()));
+  g_AP_Regen_Max.SetInt(g_AP_Regen_Max.GetInt(g_HPRegen.GetDefaultValue()));
 
   if(g_HPRegenTimer !is null)
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
@@ -68,6 +76,39 @@ void MapInit()
     @pHPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
   if (g_APRegen.GetBool())
     @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+}
+
+//Adjust Timers
+void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
+{
+
+  if (!(g_HPRegen.GetBool()))
+    g_Scheduler.RemoveTimer(g_HPRegenTimer);
+  else @pHPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+
+}
+
+void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
+{
+
+  if (!(g_APRegen.GetBool()))
+    g_Scheduler.RemoveTimer(g_APRegenTimer);
+  else @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+
+}
+
+void delayHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
+{
+
+  @pAPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+
+}
+
+void delayAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
+{
+
+  @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+
 }
 
 //Main Functions
