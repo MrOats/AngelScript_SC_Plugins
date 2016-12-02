@@ -16,7 +16,7 @@ void PluginInit(){
 void DoTheThing(const CCommand@ args){
   dictionary meh=PostVote(mydict);
   array<string> mehkeys=meh.getKeys();
-  g_PlayerFuncs.ShowMessageAll(""+int(mydict["map1"]));
+  g_PlayerFuncs.ShowMessageAll(""+int(mydict["map"]));
 }
 
 
@@ -30,13 +30,15 @@ dictionary PostVote(dictionary votedmaps){
   for (uint i = 0; i < length; i++) {
     myvalues[i]=int(votedmaps[mykeys[i]]);
   }
-
+  array<string> mykeys_dictorder(length);
   //Organize mykeys to match order of Dictionary
-  /*for (uint i = 0; i < length; i++) {
-    if () {
-
+  for (uint i = 0; i < length; i++) {
+    for (uint x = 0; x < length; x++) {
+      if(votedmaps.get(mykeys[i],myvalues[x])){
+        mykeys_dictorder[i]=mykeys[i];
+      }
     }
-  }*/
+  }
 
   sortedvalues=myvalues;
   sortedvalues.sortDesc();
@@ -44,8 +46,8 @@ dictionary PostVote(dictionary votedmaps){
   //Begin sorting
   for (uint i = 0; i < myvalues.length(); i++){
     for (uint x = 0; x < length; x++){
-      if (int(votedmaps[mykeys[i]])==myvalues[x]) {
-        votedmaps.set(mykeys[i],sortedvalues[x]);
+      if (int(votedmaps[mykeys_dictorder[i]])==myvalues[x]) {
+        votedmaps.set(mykeys_dictorder[i],sortedvalues[x]);
         myvalues.removeAt(x);
         length--;
       }
