@@ -14,7 +14,7 @@ Thank you to all those who have assisted me with this plugin!
 CScheduledFunction@ g_pKeepSpec=null;
 CScheduledFunction@ g_pSetRespawn=null;
 const int g_MAXPLAYERS=g_Engine.maxClients;
-dictionary pSpectatePlease;
+array<bool> pSpectatePlease(g_MAXPLAYERS,false);
 const float MAX_FLOAT=Math.FLOAT_MAX;
 CClientCommand spectate("spectate", "Say \"spectate on\" to turn on and \"spectate off\" to turn off", @toggleSpectate );
 //Config
@@ -31,20 +31,25 @@ void PluginInit()
   g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
 
 
-  @g_pKeepSpec = g_Scheduler.SetInterval("CheckObserver",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
-  @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
+
 }
 
 void MapInit()
 {
-  pSpectatePlease.deleteAll();
+  if(g_pKeepSpec !is null)
+    g_Scheduler.RemoveTimer(g_pKeepSpec);
+  if(g_pSetRespawn !is null)
+    g_Scheduler.RemoveTimer(g_pSetRespawn);
+
+  @g_pKeepSpec = g_Scheduler.SetInterval("CheckObserver",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
+  @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime",g_Engine.frametime,g_Scheduler.REPEAT_INFINITE_TIMES);
 }
 
 void toggleSpectate(const CCommand@ pArguments)
 {
   CBasePlayer@ pPlayer=g_ConCommandSystem.GetCurrentPlayer();
-  string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
-  if (bool(pSpectatePlease[playerID])==true)
+
+  if (pSpectatePlease[pPlayer.entindex()])
     ExitSpectate(pPlayer);
   else EnterSpectate(pPlayer);
 }
@@ -55,31 +60,29 @@ void CheckObserver()
   for (int i = 1; i <= g_MAXPLAYERS; i++)
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
+
     if(pPlayer !is null)
-      if((!pPlayer.GetObserver().IsObserver())&&(bool(pSpectatePlease[playerID)==true))
+      if((!pPlayer.GetObserver().IsObserver())&&(pSpectatePlease[pPlayer.entindex()]))
           pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
   }
 }
 
 void SetRespawnTime()
 {
-  for (int i = 1; i <= g_Engine.maxClients; i++)
+  for (int i = 1; i <= g_MAXPLAYERS; i++)
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
-    if((pPlayer !is null)&&(bool(pSpectatePlease[playerID))==true))
+    if((pPlayer !is null)&&(pSpectatePlease[pPlayer.entindex()]))
       pPlayer.m_flRespawnDelayTime=MAX_FLOAT;
   }
 }
 
 void EnterSpectate(CBasePlayer@ pPlayer)
 {
-  string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
   if(adminOnly&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
-    pSpectatePlease.set(playerID,true);
+    pSpectatePlease[pPlayer.entindex()]=true;
   else if(!adminOnly)
-    pSpectatePlease.set(playerID,true);
+    pSpectatePlease[pPlayer.entindex()]=true;
 
   //Sorta unnecessary below bewlow
   /*if(!pPlayer.GetObserver().IsObserver())
@@ -89,8 +92,7 @@ void EnterSpectate(CBasePlayer@ pPlayer)
 void ExitSpectate(CBasePlayer@ pPlayer)
 {
   g_Game.AlertMessage(at_console, "Exiting SpectateMode");
-  string playerID=g_EngineFuncs.GetPlayerAuthId(pPlayer.edict());
-  pSpectatePlease.set(playerID,false);
+  pSpectatePlease[pPlayer.entindex()]=false;
   //Reset the player's respawn time by respawning and killing.
   g_PlayerFuncs.RespawnPlayer(pPlayer,true,true);
   g_AdminControl.KillPlayer(pPlayer,3);
