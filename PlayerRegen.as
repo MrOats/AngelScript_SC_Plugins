@@ -45,9 +45,9 @@ void PluginInit()
   @g_AP_Regen_Delay=CCVar("apdelay", 3.0f, "Delay before giving AP again",  ConCommandFlag::AdminOnly);
   @g_AP_Regen_Max=CCVar("apmax", 100, "Max amount of armor player should have",  ConCommandFlag::AdminOnly);
 
-  if(g_HPRegenTimer.GetBool() !is null)
+  if(g_HPRegenTimer !is null)
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
-  if(g_APRegenTimer.GetBool() !is null)
+  if(g_APRegenTimer !is null)
     g_Scheduler.RemoveTimer(g_APRegenTimer);
 
   if (g_HPRegen.GetBool())
@@ -59,11 +59,15 @@ void PluginInit()
 void MapInit()
 {
 
-  if(g_HPRegenTimer.GetBool() !is null)
+  if(g_HPRegenTimer !is null)
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
-  if(g_APRegenTimer.GetBool() !is null)
+  if(g_APRegenTimer !is null)
 		g_Scheduler.RemoveTimer(g_APRegenTimer);
 
+  if (g_HPRegen.GetBool())
+    @pHPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+  if (g_APRegen.GetBool())
+    @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 }
 
 //Main Functions
