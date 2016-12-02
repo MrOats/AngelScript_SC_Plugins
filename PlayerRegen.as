@@ -155,12 +155,14 @@ void GiveAP()
     if ((g_adminOnly.GetBool())&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
     {
       if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
+        if(!(pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt()))
+          pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
     }
     if (!(g_adminOnly.GetBool()))
     {
       if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
+        if(!(pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt()))
+          pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
     }
   }
 
@@ -175,12 +177,14 @@ void GiveHP()
     if ((g_adminOnly.GetBool())&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
     {
       if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
+        if(!(pPlayer.pev.health>=g_HP_Regen_Max.GetInt()))
+          pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
     }
     if (!(g_adminOnly.GetBool()))
     {
       if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
+        if(!(pPlayer.pev.health>=g_HP_Regen_Max.GetInt()))
+          pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
     }
 
   }
@@ -202,6 +206,7 @@ HookReturnCode ResetCVars()
   g_AP_Regen_Amnt.SetString("1");
   g_AP_Regen_Delay.SetString("3.0f");
   g_AP_Regen_Max.SetString("100");
+  g_adminOnly.SetString("false");
 
   @g_HPRegenTimer=g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
   @g_APRegenTimer=g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
