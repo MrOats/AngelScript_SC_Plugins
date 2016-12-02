@@ -23,6 +23,7 @@ CCVar@ g_APRegen;
 CCVar@ g_AP_Regen_Amnt;
 CCVar@ g_AP_Regen_Delay;
 CCVar@ g_AP_Regen_Max;
+CCVar@ g_adminOnly;
 //Config
 
 //End Config
@@ -45,7 +46,7 @@ void PluginInit()
   @g_AP_Regen_Amnt=CCVar("apamnt", 1, "How much AP to regen per delay", ConCommandFlag::AdminOnly);
   @g_AP_Regen_Delay=CCVar("apdelay", 3.0f, "Delay before giving AP again", ConCommandFlag::AdminOnly,@delayAP);
   @g_AP_Regen_Max=CCVar("apmax", 100, "Max amount of armor player should have", ConCommandFlag::AdminOnly);
-  @g_adminOnly=CCVar("adminonly",false,"Enable or Disable for regular players ability to regen",ConCommandFlag::AdminOnly)
+  @g_adminOnly=CCVar("adminonly", true,"Enable or Disable for regular players ability to regen",ConCommandFlag::AdminOnly);
 
   if(g_HPRegenTimer !is null)
   {
@@ -155,13 +156,13 @@ void GiveAP()
     if ((g_adminOnly.GetBool())&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
     {
       if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        if(!(pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt()))
+        if(!(pPlayer.pev.armorvalue>=g_AP_Regen_Amnt.GetInt()))
           pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
     }
     if (!(g_adminOnly.GetBool()))
     {
       if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        if(!(pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt()))
+        if(!(pPlayer.pev.armorvalue>=g_AP_Regen_Amnt.GetInt()))
           pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
     }
   }
@@ -206,7 +207,7 @@ HookReturnCode ResetCVars()
   g_AP_Regen_Amnt.SetString("1");
   g_AP_Regen_Delay.SetString("3.0f");
   g_AP_Regen_Max.SetString("100");
-  g_adminOnly.SetString("false");
+  g_adminOnly.SetString("true");
 
   @g_HPRegenTimer=g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
   @g_APRegenTimer=g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
