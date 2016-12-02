@@ -38,15 +38,15 @@ void PluginInit()
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@SetMax);
 
   //DO NOT CHANGE DEFAULT VALUES.
-  @g_HPRegen=CCVar("hpregen", true, "Enable or Disable HP Regen", ConCommandFlag::AdminOnly,@toggleHP);
-  @g_HP_Regen_Amnt=CCVar("hpamnt", 1, "How much HP to regen per delay", ConCommandFlag::AdminOnly);
-  @g_HP_Regen_Delay=CCVar("hpdelay", 3.0f, "Delay before giving HP again", ConCommandFlag::AdminOnly,@delayHP);
-  @g_HP_Regen_Max=CCVar("hpmax", 100, "Max amount of health player should have", ConCommandFlag::AdminOnly);
-  @g_APRegen=CCVar("apregen", true, "Enable or Disable AP Regen", ConCommandFlag::AdminOnly,@toggleAP);
-  @g_AP_Regen_Amnt=CCVar("apamnt", 1, "How much AP to regen per delay", ConCommandFlag::AdminOnly);
-  @g_AP_Regen_Delay=CCVar("apdelay", 3.0f, "Delay before giving AP again", ConCommandFlag::AdminOnly,@delayAP);
-  @g_AP_Regen_Max=CCVar("apmax", 100, "Max amount of armor player should have", ConCommandFlag::AdminOnly);
-  @g_adminOnly=CCVar("adminonly", true,"Enable or Disable for regular players ability to regen",ConCommandFlag::AdminOnly);
+  @g_HPRegen=CCVar("hpregen","true", "Enable or Disable HP Regen", ConCommandFlag::AdminOnly,@toggleHP);
+  @g_HP_Regen_Amnt=CCVar("hpamnt","1", "How much HP to regen per delay", ConCommandFlag::AdminOnly);
+  @g_HP_Regen_Delay=CCVar("hpdelay","3.0f", "Delay before giving HP again", ConCommandFlag::AdminOnly,@delayHP);
+  @g_HP_Regen_Max=CCVar("hpmax","100", "Max amount of health player should have", ConCommandFlag::AdminOnly);
+  @g_APRegen=CCVar("apregen","true", "Enable or Disable AP Regen", ConCommandFlag::AdminOnly,@toggleAP);
+  @g_AP_Regen_Amnt=CCVar("apamnt","1", "How much AP to regen per delay", ConCommandFlag::AdminOnly);
+  @g_AP_Regen_Delay=CCVar("apdelay","3.0f", "Delay before giving AP again", ConCommandFlag::AdminOnly,@delayAP);
+  @g_AP_Regen_Max=CCVar("apmax","100", "Max amount of armor player should have", ConCommandFlag::AdminOnly);
+  @g_adminOnly=CCVar("adminonly","false","Enable or Disable for regular players ability to regen",ConCommandFlag::AdminOnly);
 
   if(g_HPRegenTimer !is null)
   {
@@ -150,45 +150,53 @@ HookReturnCode SetMax(CBasePlayer@ pPlayer)
 
 void GiveAP()
 {
-  for (int i = 1; i <= g_MAXPLAYERS; i++)
+
+  if (g_adminOnly.GetBool())
   {
-    CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    if ((g_adminOnly.GetBool())&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
+    for (int i = 1; i <= g_MAXPLAYERS; i++)
     {
-      if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        if(!(pPlayer.pev.armorvalue>=g_AP_Regen_Amnt.GetInt()))
-          pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
-    }
-    if (!(g_adminOnly.GetBool()))
-    {
-      if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        if(!(pPlayer.pev.armorvalue>=g_AP_Regen_Amnt.GetInt()))
-          pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
+      CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+        if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()) && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
+          if(!(pPlayer.pev.armorvalue>=g_AP_Regen_Amnt.GetInt()))
+            pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
     }
   }
+    if (!(g_adminOnly.GetBool()))
+    {
+      for (int i = 1; i <= g_MAXPLAYERS; i++)
+      {
+        CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+          if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
+            if(!(pPlayer.pev.armorvalue>=g_AP_Regen_Amnt.GetInt()))
+              pPlayer.pev.armorvalue+=g_AP_Regen_Amnt.GetInt();
+      }
+    }
 
 }
 
 void GiveHP()
 {
 
-  for (int i = 1; i <= g_MAXPLAYERS; i++)
+  if (g_adminOnly.GetBool())
   {
-    CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-    if ((g_adminOnly.GetBool())&&(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
+    for (int i = 1; i <= g_MAXPLAYERS; i++)
     {
-      if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        if(!(pPlayer.pev.health>=g_HP_Regen_Max.GetInt()))
-          pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
+      CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+        if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()) && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES))
+          if(!(pPlayer.pev.health>=g_HP_Regen_Amnt.GetInt()))
+            pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
     }
+  }
     if (!(g_adminOnly.GetBool()))
     {
-      if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-        if(!(pPlayer.pev.health>=g_HP_Regen_Max.GetInt()))
-          pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
+      for (int i = 1; i <= g_MAXPLAYERS; i++)
+      {
+        CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+          if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
+            if(!(pPlayer.pev.health>=g_HP_Regen_Amnt.GetInt()))
+              pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
+      }
     }
-
-  }
 
 }
 
@@ -207,7 +215,7 @@ HookReturnCode ResetCVars()
   g_AP_Regen_Amnt.SetString("1");
   g_AP_Regen_Delay.SetString("3.0f");
   g_AP_Regen_Max.SetString("100");
-  g_adminOnly.SetString("true");
+  g_adminOnly.SetString("false");
 
   @g_HPRegenTimer=g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
   @g_APRegenTimer=g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
