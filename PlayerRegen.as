@@ -73,9 +73,9 @@ void MapInit()
 		g_Scheduler.RemoveTimer(g_APRegenTimer);
 
   if (g_HPRegen.GetBool())
-    @pHPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+    @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
   if (g_APRegen.GetBool())
-    @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+    @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 }
 
 //Adjust Timers
@@ -84,7 +84,7 @@ void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
   if (!(g_HPRegen.GetBool()))
     g_Scheduler.RemoveTimer(g_HPRegenTimer);
-  else @pHPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+  else @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
 
@@ -93,21 +93,21 @@ void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
   if (!(g_APRegen.GetBool()))
     g_Scheduler.RemoveTimer(g_APRegenTimer);
-  else @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+  else @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
 
 void delayHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
 
-  @pAPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+  @g_APRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
 
 void delayAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
 
-  @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+  @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
 
