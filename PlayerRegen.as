@@ -44,6 +44,16 @@ void PluginInit()
   @g_AP_Regen_Amnt=CCVar("apamnt", 1, "How much AP to regen per delay",  ConCommandFlag::AdminOnly);
   @g_AP_Regen_Delay=CCVar("apdelay", 3.0f, "Delay before giving AP again",  ConCommandFlag::AdminOnly);
   @g_AP_Regen_Max=CCVar("apmax", 100, "Max amount of armor player should have",  ConCommandFlag::AdminOnly);
+
+  if(g_HPRegenTimer.GetBool() !is null)
+    g_Scheduler.RemoveTimer(g_HPRegenTimer);
+  if(g_APRegenTimer.GetBool() !is null)
+    g_Scheduler.RemoveTimer(g_APRegenTimer);
+
+  if (g_HPRegen.GetBool())
+    @pHPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
+  if (g_APRegen.GetBool())
+    @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 }
 
 void MapInit()
@@ -54,11 +64,6 @@ void MapInit()
   if(g_APRegenTimer.GetBool() !is null)
 		g_Scheduler.RemoveTimer(g_APRegenTimer);
 
-  if (HPRegen)
-    @pHPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-  if (APRegen)
-    @pAPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-
 }
 
 //Main Functions
@@ -68,6 +73,7 @@ HookReturnCode SetMax(CBasePlayer@ pPlayer)
   pPlayer.pev.max_health=g_HP_Regen_Max.GetInt();
   pPlayer.pev.armortype=g_AP_Regen_Max.GetInt();
   return HOOK_HANDLED;
+
 }
 
 void GiveAP()
@@ -88,7 +94,7 @@ void GiveHP()
   {
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
     if ((pPlayer !is null) && (pPlayer.IsConnected()) && (pPlayer.IsAlive()))
-      pPlayer.pev.health+=HP_Regen_Amnt.GetInt();
+      pPlayer.pev.health+=g_HP_Regen_Amnt.GetInt();
   }
 
 }
