@@ -6,7 +6,7 @@ License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-CClientCommand setspeed( "setspeed", ".setspeed name speed", @setspeed, ConCommandFlag::AdminOnly);
+CClientCommand setspeed( "setspeed", ".setspeed name speed", @speedset, ConCommandFlag::AdminOnly);
 
 void PluginInit()
 {
@@ -16,11 +16,11 @@ void PluginInit()
 
 }
 
-void setspeed(const CCommand@ pArguments)
+void speedset(const CCommand@ pArguments)
 {
 
   CBasePlayer@ pPlayer=pPlayer.FindPlayerByName(pArguments.Arg(2));
-  pPlayer.pev.maxspeed=pArguments.Arg(3);
+  pPlayer.pev.maxspeed=float(pArguments.FindIntArg(pArguments.Arg(3)));
   g_PlayerFuncs.SayText(pPlayer,"Your speed has been set to: "+pPlayer.pev.maxspeed+"\n");
 
 }
