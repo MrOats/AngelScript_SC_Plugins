@@ -77,6 +77,19 @@ void CheckObserver()
 
 void SetRespawnTime()
 {
+/*
+
+The reason why we are still using a Scheduler that
+runs constantly at a <1 second interval is because
+the game isn't setting the player's respawn timer when
+I try setting it once. Tried using a PlayerSpawn hook and
+a PlayerKilled hook to set it at those times, even when I put
+the player to Observer Mode.
+
+This "hack" will remain until a proper "run-once" solution is set on a
+per-player basis.
+
+*/
 
   for (int i = 1; i <= g_MAXPLAYERS; i++)
   {
