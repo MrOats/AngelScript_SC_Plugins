@@ -29,8 +29,9 @@ void PluginInit()
   g_Module.ScriptInfo.SetAuthor("MrOats");
   g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44306-Plugin-SpectateMode");
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
-  g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
+//  g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@CheckSpectate);
+  g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@SetRespawnTime);
 
 }
 
@@ -40,12 +41,12 @@ void MapInit()
   for (uint i = 0; i < pSpectatePlease.length(); i++) {
     pSpectatePlease[i] = false;
   }
-
+/*
   if(g_pSetRespawn !is null)
     g_Scheduler.RemoveTimer(g_pSetRespawn);
 
   @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime", .5f, g_Scheduler.REPEAT_INFINITE_TIMES);
-
+*/
 }
 
 void toggleSpectate(const CCommand@ pArguments)
@@ -72,8 +73,18 @@ void CheckObserver()
   }
 
 }
+HookReturnCode SetRespawnTime( CBasePlayer@ pPlayer, CBaseEntity@ pAttacker, int iGib )
+{
+  if (pSpectatePlease[pPlayer.entindex() - 1])
+  {
 
-void SetRespawnTime()
+    pPlayer.m_flRespawnDelayTime = MAX_FLOAT;
+    return HOOK_HANDLED;
+
+  }
+  else return HOOK_HANDLED;
+}
+void ()
 {
 
   for (int i = 1; i <= g_MAXPLAYERS; i++)
@@ -81,7 +92,7 @@ void SetRespawnTime()
 
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
 
-    if ((pPlayer !is null) && (pSpectatePlease[pPlayer.entindex() - 1]))
+    if ((pPlayer !is null) && ()
       pPlayer.m_flRespawnDelayTime = MAX_FLOAT;
 
   }
@@ -134,7 +145,7 @@ HookReturnCode CheckSpectate(CBasePlayer@ pPlayer)
     return HOOK_HANDLED;
 
 }
-
+/*
 HookReturnCode EndTimerFuncs()
 {
 
@@ -142,3 +153,4 @@ HookReturnCode EndTimerFuncs()
   return HOOK_HANDLED;
 
 }
+*/
