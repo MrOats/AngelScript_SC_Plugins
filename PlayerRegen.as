@@ -35,13 +35,13 @@ void PluginInit()
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@SetMax);
 
   //DO NOT CHANGE DEFAULT VALUES.
-  @g_HPRegen = CCVar("hpregen","true", "Enable or Disable HP Regen", ConCommandFlag::AdminOnly,@refreshHP);
+  @g_HPRegen = CCVar("hpregen","true", "Enable or Disable HP Regen", ConCommandFlag::AdminOnly,@toggleHP);
   @g_HP_Regen_Amnt = CCVar("hpamnt","1", "How much HP to regen per delay", ConCommandFlag::AdminOnly);
-  @g_HP_Regen_Delay = CCVar("hpdelay","3.0f", "Delay before giving HP again", ConCommandFlag::AdminOnly,@refreshHP);
+  @g_HP_Regen_Delay = CCVar("hpdelay","3.0f", "Delay before giving HP again", ConCommandFlag::AdminOnly,@delayHP);
   @g_HP_Regen_Max = CCVar("hpmax","100", "Max amount of health player should have", ConCommandFlag::AdminOnly);
-  @g_APRegen = CCVar("apregen","true", "Enable or Disable AP Regen", ConCommandFlag::AdminOnly,@refreshAP);
+  @g_APRegen = CCVar("apregen","true", "Enable or Disable AP Regen", ConCommandFlag::AdminOnly,@toggleAP);
   @g_AP_Regen_Amnt = CCVar("apamnt","1", "How much AP to regen per delay", ConCommandFlag::AdminOnly);
-  @g_AP_Regen_Delay = CCVar("apdelay","3.0f", "Delay before giving AP again", ConCommandFlag::AdminOnly,@refreshAP);
+  @g_AP_Regen_Delay = CCVar("apdelay","3.0f", "Delay before giving AP again", ConCommandFlag::AdminOnly,@delayAP);
   @g_AP_Regen_Max = CCVar("apmax","100", "Max amount of armor player should have", ConCommandFlag::AdminOnly);
 
   if(g_HPRegenTimer !is null)
@@ -95,7 +95,7 @@ void MapStart()
 }
 
 //Adjust Timers
-void refreshHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
+void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
 
   if ( !(g_HPRegen.GetBool()) )
@@ -105,20 +105,13 @@ void refreshHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
     @g_HPRegenTimer = null;
 
   }
-  else
-  {
-
-    g_Scheduler.RemoveTimer(g_HPRegenTimer);
-    @g_HPRegenTimer = null;
-    @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-
-  }
-
+  else @g_HPRegenTimer=  g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 }
 
-void refreshAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
+void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
 
+  g_Scheduler.RemoveTimer(g_APRegenTimer);
   if ( !(g_APRegen.GetBool()) )
   {
 
@@ -126,16 +119,9 @@ void refreshAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
     @g_APRegenTimer = null;
 
   }
-  else
-  {
-
-    g_Scheduler.RemoveTimer(g_APRegenTimer);
-    @g_APRegenTimer = null;
-    @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-
-  }
+  else @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 }
-/*
+
 void delayHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 {
 
@@ -152,10 +138,8 @@ void delayAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
   @g_APRegenTimer = null;
   @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
 }
-*/
 
 //Main Functions
-
 HookReturnCode SetMax(CBasePlayer@ pPlayer)
 {
 
@@ -167,10 +151,11 @@ HookReturnCode SetMax(CBasePlayer@ pPlayer)
 
 void GiveAP()
 {
-
+  g_Game.AlertMessage(at_console, "Giving AP1\n");
   for (int i = 1; i <= g_Engine.maxClients; i++)
   {
 
+    g_Game.AlertMessage(at_console, "Giving AP2\n");
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
     if ( (pPlayer !is null) && (pPlayer.IsAlive()) )
       if ( !(pPlayer.pev.armorvalue >= g_AP_Regen_Max.GetInt()) )
@@ -182,10 +167,11 @@ void GiveAP()
 
 void GiveHP()
 {
-
+  g_Game.AlertMessage(at_console, "Giving HP1\n");
   for (int i = 1; i <= g_Engine.maxClients; i++)
   {
-    g_Game.AlertMessage(at_console, "Giving HP\n");
+
+    g_Game.AlertMessage(at_console, "Giving HP2\n");
     CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
     if ( (pPlayer !is null) && (pPlayer.IsAlive()) )
       if ( !(pPlayer.pev.health >= g_HP_Regen_Max.GetInt()) )
