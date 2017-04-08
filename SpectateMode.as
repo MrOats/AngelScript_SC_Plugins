@@ -185,6 +185,8 @@ HookReturnCode EndTimerFuncs()
 {
 
   g_Scheduler.ClearTimerList();
+  @g_pSetRespawn = null;
+  
   return HOOK_HANDLED;
 
 }
