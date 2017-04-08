@@ -134,68 +134,6 @@ void refreshTimers(CCVar@ cvar, const string& in szOldValue, float flOldValue)
 
 }
 
-void delayAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
-{
-
-  g_Scheduler.RemoveTimer(g_APRegenTimer);
-  @g_APRegenTimer = null;
-  @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-}
-/*
-void toggleHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
-{
-
-  if ( !(g_HPRegen.GetBool()) )
-  {
-
-    g_Scheduler.RemoveTimer(g_HPRegenTimer);
-    @g_HPRegenTimer = null;
-
-  }
-  else
-  {
-    g_Scheduler.RemoveTimer(g_HPRegenTimer);
-    @g_HPRegenTimer = null;
-    @g_HPRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-  }
-}
-
-void toggleAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
-{
-
-
-  if ( !(g_APRegen.GetBool()) )
-  {
-
-    g_Scheduler.RemoveTimer(g_APRegenTimer);
-    @g_APRegenTimer = null;
-
-  }
-  else
-  {
-    g_Scheduler.RemoveTimer(g_APRegenTimer);
-    @g_APRegenTimer = null;
-    @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-  }
-}
-
-void delayHP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
-{
-
-  g_Scheduler.RemoveTimer(g_HPRegenTimer);
-  @g_HPRegenTimer = null;
-  @g_HPRegenTimer = g_Scheduler.SetInterval("GiveHP",g_HP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-
-}
-
-void delayAP(CCVar@ cvar, const string& in szOldValue, float flOldValue)
-{
-
-  g_Scheduler.RemoveTimer(g_APRegenTimer);
-  @g_APRegenTimer = null;
-  @g_APRegenTimer = g_Scheduler.SetInterval("GiveAP",g_AP_Regen_Delay.GetFloat(),g_Scheduler.REPEAT_INFINITE_TIMES);
-}
-*/
 //Main Functions
 HookReturnCode SetMax(CBasePlayer@ pPlayer)
 {
