@@ -17,7 +17,7 @@ Thank you to all those who have assisted me with this plugin!
 CScheduledFunction@ g_pSetRespawn = null;
 array<bool> bSpectatePlease(8, false);
 const float MAX_FLOAT = Math.FLOAT_MAX;
-CClientCommand spectate("spectate", "Say \"spectate on\" to turn on and \"spectate off\" to turn off", @toggleSpectate );
+CClientCommand spectate("spectate", "Toggles Player's spectate state", @toggleSpectate );
 
 //Config
 
@@ -110,6 +110,7 @@ void ExitSpectate(CBasePlayer@ pPlayer)
 
   //g_Game.AlertMessage(at_console, "Exiting SpectateMode\n");
   bSpectatePlease[pPlayer.entindex() - 1] = false;
+  
   //Reset the player's respawn time by respawning and killing.
   g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
   g_AdminControl.KillPlayer(pPlayer, 3);
@@ -126,8 +127,7 @@ HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer)
 
 /*
 Having issues with below code as it still attempts to respawn player,
-but they get sent back to being dead and so they are in
-observer mode above their attempted respawn spot.
+See https://github.com/baso88/SC_AngelScript/issues/49
 
 HookReturnCode PreventRespawn(CBasePlayer@ pPlayer, bool& out bCanRespawn)
 {
