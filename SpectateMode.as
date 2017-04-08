@@ -35,9 +35,23 @@ void PluginInit()
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@CheckSpectate);
   /* g_Hooks.RegisterHook(Hooks::Player::PlayerCanRespawn,@PreventRespawn); <-- See function for notes */
 
+  /*Just in case as_reloadplugins is called
+  bSpectatePlease.resize(g_Engine.maxClients);
+  for (uint i = 0; i < bSpectatePlease.length(); i++)
+  {
+
+    bSpectatePlease[i] = false;
+
+  }
+
+  if(g_pSetRespawn !is null)
+    g_Scheduler.RemoveTimer(g_pSetRespawn);
+
+  @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime", .5f, g_Scheduler.REPEAT_INFINITE_TIMES);
+  */
 }
 
-void MapInit()
+void MapActivate()
 {
 
   bSpectatePlease.resize(g_Engine.maxClients);
@@ -110,7 +124,7 @@ void ExitSpectate(CBasePlayer@ pPlayer)
 
   //g_Game.AlertMessage(at_console, "Exiting SpectateMode\n");
   bSpectatePlease[pPlayer.entindex() - 1] = false;
-  
+
   //Reset the player's respawn time by respawning and killing.
   g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
   g_AdminControl.KillPlayer(pPlayer, 3);
@@ -126,11 +140,12 @@ HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer)
 }
 
 /*
-Having issues with below code as it still attempts to respawn player,
-See https://github.com/baso88/SC_AngelScript/issues/49
+
 
 HookReturnCode PreventRespawn(CBasePlayer@ pPlayer, bool& out bCanRespawn)
 {
+Having issues with below code as it still attempts to respawn player,
+See https://github.com/baso88/SC_AngelScript/issues/49
 
   if (bSpectatePlease[pPlayer.entindex() - 1])
   {
