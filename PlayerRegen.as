@@ -181,15 +181,6 @@ HookReturnCode ResetCVars()
   @g_HPRegenTimer = null;
   @g_APRegenTimer = null;
 
-  g_HPRegen.SetBool(true);
-  g_HP_Regen_Amnt.SetInt(1);
-  g_HP_Regen_Delay.SetFloat(3.0);
-  g_HP_Regen_Max.SetInt(100);
-  g_APRegen.SetBool(true);
-  g_AP_Regen_Amnt.SetInt(1);
-  g_AP_Regen_Delay.SetFloat(3.0);
-  g_AP_Regen_Max.SetInt(100);
-
   return HOOK_HANDLED;
 
 }
