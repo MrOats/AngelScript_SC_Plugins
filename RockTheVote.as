@@ -87,7 +87,6 @@ array<RTV_Data@> rtv_plr_data;
 bool isVoting = false;
 bool canRTV = false;
 
-int rtvVoted = 0;
 
 CCVar@ g_SecondsUntilVote;
 CCVar@ g_MapList;
@@ -357,20 +356,19 @@ void RockTheVote(CBasePlayer@ pPlayer)
   {
 
     g_PlayerFuncs.SayText(pPlayer,"You have already Rocked the Vote!\n");
-    g_PlayerFuncs.SayTextAll(pPlayer,"" + rtvVoted + " of " + rtvRequired + " players until vote initiates!\n");
+    g_PlayerFuncs.SayTextAll(pPlayer,"" + GetRTVd() + " of " + rtvRequired + " players until vote initiates!\n");
 
   }
   else
   {
 
     rtvdataobj.bHasRTV = true;
-    rtvVoted += 1;
     g_PlayerFuncs.SayText(pPlayer,"You have Rocked the Vote!");
-    g_PlayerFuncs.SayTextAll(pPlayer,"" + rtvVoted + " of " + rtvRequired + " players until vote initiates!\n");
+    g_PlayerFuncs.SayTextAll(pPlayer,"" + GetRTVd() + " of " + rtvRequired + " players until vote initiates!\n");
 
   }
 
-  if (rtvVoted >= rtvRequired)
+  if (GetRTVd() >= rtvRequired)
   {
 
     if (!isVoting)
@@ -776,15 +774,30 @@ array<string> GetVotedMaps()
   for (size_t i = 0; i < rtv_plr_data.length(); i++)
   {
 
-    RTV_Data@ pPlayer = @rtv_plr_data[i];
-
-    if (pPlayer !is null)
-      if ( !(pPlayer.szVotedMap.IsEmpty()) )
+    if (@rtv_plr_data[i] !is null)
+      if ( !(rtv_plr_data[i].szVotedMap.IsEmpty()) )
         votedmaps.insertLast(pPlayer.szVotedMap);
 
   }
 
   return votedmaps;
+
+}
+
+int GetRTVd()
+{
+
+  int counter = 0;
+  for (size_t i = 0; i < rtv_plr_data.length(); i++)
+  {
+
+    if (@rtv_plr_data[i] !is null)
+      if (rtv_plr_data[i].bHasRTV) )
+        counter += 1;
+
+  }
+
+  return counter;
 
 }
 
@@ -794,12 +807,10 @@ void ClearVotedMaps()
   for (size_t i = 0; i < rtv_plr_data.length(); i++)
   {
 
-    RTV_Data@ pPlayer = @rtv_plr_data[i];
-
-    if (pPlayer !is null)
+    if (@rtv_plr_data[i] !is null)
     {
 
-      pPlayer.szVotedMap.Clear();
+      rtv_plr_data.szVotedMap = "";
 
     }
 
@@ -813,12 +824,10 @@ void ClearRTV()
   for (size_t i = 0; i < rtv_plr_data.length(); i++)
   {
 
-    RTV_Data@ pPlayer = @rtv_plr_data[i];
-
-    if (pPlayer !is null)
+    if (@rtv_plr_data[i] !is null)
     {
 
-      pPlayer.bHasRTV = false;
+      rtv_plr_data[i].bHasRTV = false;
 
     }
 
