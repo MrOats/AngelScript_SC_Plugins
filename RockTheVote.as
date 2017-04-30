@@ -558,16 +558,18 @@ void PostVote()
 
   //Find how many maps were voted at the highest
   array<string> candidates;
-  for (size_t i = 0; i < rtvList.length(); i++)
+  array<string singlecount = rtvVotes.getKeys()
+  for (size_t i = 0; i < singlecount.length(); i++)
   {
 
-    if ( int(rtvVotes[rtvList[i]]) == highestVotes)
+    if ( int(rtvVotes[singlecount[i]]) == highestVotes)
     {
 
-      candidates.insertLast( rtvList[i] );
+      candidates.insertLast( singlecount[i] );
 
     }
   }
+  singlecount.resize(0);
 
   //Revote or random choose if more than one map is at highest vote count
   if (candidates.length() > 1)
@@ -660,7 +662,7 @@ void ChooseMap(string chosenMap, bool forcechange)
 
 int CalculateRequired()
 {
-  
+
   return int(ceil( g_PlayerFuncs.GetNumPlayers() * (g_PercentageRequired.GetInt() / 100.0f) ));
 
 }
