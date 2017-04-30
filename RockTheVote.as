@@ -776,7 +776,7 @@ array<string> GetVotedMaps()
 
     if (@rtv_plr_data[i] !is null)
       if ( !(rtv_plr_data[i].szVotedMap.IsEmpty()) )
-        votedmaps.insertLast(pPlayer.szVotedMap);
+        votedmaps.insertLast(rtv_plr_data[i].szVotedMap);
 
   }
 
@@ -792,7 +792,7 @@ int GetRTVd()
   {
 
     if (@rtv_plr_data[i] !is null)
-      if (rtv_plr_data[i].bHasRTV) )
+      if (rtv_plr_data[i].bHasRTV)
         counter += 1;
 
   }
@@ -810,7 +810,7 @@ void ClearVotedMaps()
     if (@rtv_plr_data[i] !is null)
     {
 
-      rtv_plr_data.szVotedMap = "";
+      rtv_plr_data[i].szVotedMap = "";
 
     }
 
