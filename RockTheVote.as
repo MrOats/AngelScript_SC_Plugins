@@ -558,7 +558,7 @@ void PostVote()
 
   //Find how many maps were voted at the highest
   array<string> candidates;
-  array<string singlecount = rtvVotes.getKeys()
+  array<string> singlecount = rtvVotes.getKeys();
   for (size_t i = 0; i < singlecount.length(); i++)
   {
 
