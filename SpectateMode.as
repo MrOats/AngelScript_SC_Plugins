@@ -33,6 +33,7 @@ void PluginInit()
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
   g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@CheckSpectate);
+  g_Hooks.RegisterHook(Hooks::Player::ClientSay, @DeciderClient);
   /* g_Hooks.RegisterHook(Hooks::Player::PlayerCanRespawn,@PreventRespawn); <-- See function for notes */
 
   /*Just in case as_reloadplugins is called
@@ -67,6 +68,16 @@ void MapActivate()
 
 }
 
+void toggleSpectate(const CCommand@ pArguments, CBasePlayer@ pPlayer)
+{
+
+
+  if (bSpectatePlease[pPlayer.entindex() - 1])
+  ExitSpectate(pPlayer);
+  else EnterSpectate(pPlayer);
+
+}
+
 void toggleSpectate(const CCommand@ pArguments)
 {
 
@@ -77,6 +88,7 @@ void toggleSpectate(const CCommand@ pArguments)
   else EnterSpectate(pPlayer);
 
 }
+
 
 void SetRespawnTime()
 {
@@ -128,6 +140,31 @@ void ExitSpectate(CBasePlayer@ pPlayer)
   //Reset the player's respawn time by respawning and killing.
   g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
   g_AdminControl.KillPlayer(pPlayer, 3);
+
+}
+
+HookReturnCode DeciderClient(SayParameters@ pParams)
+{
+
+  CBasePlayer@ pPlayer = pParams.GetPlayer();
+  const CCommand@ pArguments = pParams.GetArguments();
+
+  if (pArguments[0] == "!spectate")
+  {
+
+    toggleSpectate(@pArguments, @pPlayer);
+    return HOOK_HANDLED;
+
+  }
+  else if (pArguments[0] == "/spectate")
+  {
+
+    pParams.set_ShouldHide(true);
+    toggleSpectate(@pArguments, @pPlayer);
+    return HOOK_HANDLED;
+
+  }
+  else return HOOK_CONTINUE;
 
 }
 
@@ -186,7 +223,7 @@ HookReturnCode EndTimerFuncs()
 
   g_Scheduler.ClearTimerList();
   @g_pSetRespawn = null;
-  
+
   return HOOK_HANDLED;
 
 }

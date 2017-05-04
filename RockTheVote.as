@@ -110,7 +110,8 @@ void PluginInit()
   g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44609-Plugin-RockTheVote");
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect, @DisconnectCleanUp);
   g_Hooks.RegisterHook(Hooks::Player::ClientPutInServer, @AddPlayer);
-  g_Hooks.RegisterHook(Hooks::Game::MapChange,@ResetVars);
+  g_Hooks.RegisterHook(Hooks::Game::MapChange, @ResetVars);
+  g_Hooks.RegisterHook(Hooks::Player::ClientSay, @Decider);
 
   @g_SecondsUntilVote = CCVar("secondsUntilVote", 120, "Delay before players can RTV after map has started", ConCommandFlag::AdminOnly);
   @g_MapList = CCVar("szMapListPath", "mapcycle.txt", "Path to list of maps to use. Defaulted to map cycle file", ConCommandFlag::AdminOnly);
@@ -151,6 +152,30 @@ void MapActivate()
   }
 
   @g_TimeUntilVote = g_Scheduler.SetInterval("DecrementSeconds", 1, g_SecondsUntilVote.GetInt() + 1);
+
+}
+
+HookReturnCode Decider(SayParameters@ pParams)
+{
+
+  CBasePlayer@ pPlayer = pParams.GetPlayer();
+  const CCommand@ pArguments = pParams.GetArguments();
+
+  if (pArguments[0] == "nominate")
+  {
+
+    NomPush(@pArguments, @pPlayer);
+    return HOOK_HANDLED;
+
+  }
+  else if (pArguments[0] == "rtv")
+  {
+
+    RtvPush(@pArguments, @pPlayer);
+    return HOOK_HANDLED;
+
+  }
+  else return HOOK_CONTINUE;
 
 }
 
@@ -207,6 +232,34 @@ void DecrementSeconds()
 
 }
 
+void RtvPush(const CCommand@ pArguments, CBasePlayer@ pPlayer)
+{
+
+  if (isVoting)
+  {
+
+    rtvmenu.Open(0, 0, pPlayer);
+
+  }
+  else
+  {
+    if (canRTV)
+    {
+
+      RockTheVote(pPlayer);
+
+    }
+    else
+    {
+
+      g_PlayerFuncs.SayTextAll(pPlayer, "RTV will enable in " + g_SecondsUntilVote.GetInt() +" seconds.\n" );
+
+    }
+
+  }
+
+}
+
 void RtvPush(const CCommand@ pArguments)
 {
 
@@ -235,6 +288,25 @@ void RtvPush(const CCommand@ pArguments)
   }
 
 }
+
+void NomPush(const CCommand@ pArguments, CBasePlayer@ pPlayer)
+{
+
+  if (pArguments.ArgC() == 2)
+  {
+
+    NominateMap(pPlayer,pArguments.Arg(1));
+
+  }
+  else if (pArguments.ArgC() == 1)
+  {
+
+    NominateMenu(pPlayer);
+
+  }
+
+}
+
 
 void NomPush(const CCommand@ pArguments)
 {
