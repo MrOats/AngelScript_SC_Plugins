@@ -16,14 +16,12 @@ final class AFK_Data
 
   private Vector m_lastOrigin;
   private bool m_isSpectate = false;
-  private bool m_specTimerOn = false;
-  private bool m_kickTimerOn = false;
+  private int m_secondsUntilSpec = 0;
+  private int m_secondsUntilKick = 0;
   private CBasePlayer@ m_pPlayer;
   private string m_szPlayerName = "";
   private string m_szSteamID = "";
 
-  private CScheduledFunction@ specTimer = null;
-  private CScheduledFunction@ kickTimer = null;
   private CScheduledFunction@ initTimer = null;
 
   //RTV Data Properties
@@ -38,15 +36,15 @@ final class AFK_Data
     get const { return m_isSpectate; }
     set { m_isSpectate = value; }
   }
-  bool specTimerOn
+  int secondsUntilSpec
   {
-    get const { return m_specTimerOn; }
-    set { m_specTimerOn = value; }
+    get const { return m_secondsUntilSpec; }
+    set { m_secondsUntilSpec = value; }
   }
-  bool kickTimerOn
+  int secondsUntilKick
   {
-    get const { return m_kickTimerOn; }
-    set { m_kickTimerOn = value; }
+    get const { return m_secondsUntilKick; }
+    set { m_secondsUntilKick = value; }
   }
   CBasePlayer@ pPlayer
   {
@@ -65,24 +63,6 @@ final class AFK_Data
 
   //AFK Data Functions
 
-  void ClearSpecTimer()
-  {
-
-    g_Scheduler.RemoveTimer(@specTimer);
-    @specTimer = null;
-    specTimerOn = false;
-
-  }
-
-  void ClearKickTimer()
-  {
-
-    g_Scheduler.RemoveTimer(@kickTimer);
-    @kickTimer = null;
-    kickTimerOn = false;
-
-  }
-
   void ClearInitTimer()
   {
 
@@ -91,42 +71,10 @@ final class AFK_Data
 
   }
 
-  void ClearAllTimers()
-  {
-
-    g_Scheduler.RemoveTimer(@specTimer);
-    @specTimer = null;
-    specTimerOn = false;
-    g_Scheduler.RemoveTimer(@kickTimer);
-    @kickTimer = null;
-    kickTimerOn = false;
-    g_Scheduler.RemoveTimer(@initTimer);
-    @initTimer = null;
-
-  }
-
   void Initiate()
   {
 
-    @initTimer = g_Scheduler.SetTimeout(this, "CheckAFK", 5);
-
-  }
-
-  void BeginSpecTimer()
-  {
-
-    @specTimer = g_Scheduler.SetTimeout(this, "CheckAFK", g_SecondsUntilSpec.GetFloat());
-    specTimerOn = true;
-    MessageWarnPlayer(pPlayer, string("You have " + g_SecondsUntilSpec.GetInt() + " seconds before you are moved to spectate") );
-
-  }
-
-  void BeginKickTimer()
-  {
-
-    @kickTimer = g_Scheduler.SetTimeout(this, "CheckAFK", g_SecondsUntilKick.GetFloat());
-    kickTimerOn = true;
-    MessageWarnPlayer(pPlayer, string("You have " + g_SecondsUntilSpec.GetInt() + " seconds before you are kicked") );
+    @initTimer = g_Scheduler.SetInterval(this, "CheckAFK", 1, g_Scheduler.REPEAT_INFINITE_TIMES);
 
   }
 
@@ -134,6 +82,26 @@ final class AFK_Data
   {
 
     lastOrigin = pPlayer.GetOrigin();
+
+  }
+
+  void KickPlayer()
+  {
+
+    if ( g_KickAdmins.GetBool() && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
+    {
+
+      g_EngineFuncs.ServerCommand("kicksteamid \"" + szSteamID + "\"\n");
+      //g_AdminControl.KickPlayer(pPlayer, 1);
+
+    }
+    else
+    {
+
+      g_EngineFuncs.ServerCommand("kicksteamid \"" + szSteamID + "\"\n");
+      //g_AdminControl.KickPlayer(pPlayer, -1);
+
+    }
 
   }
 
@@ -163,23 +131,6 @@ final class AFK_Data
 
   }
 
-  void HasMovedSinceSpec()
-  {
-
-    if (isSpectate && HasMoved())
-    {
-
-      MessageWarnPlayer(pPlayer, "Moving you back to the game through respawn...");
-      g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
-      g_AdminControl.KillPlayer(pPlayer, 3);
-      isSpectate = false;
-      ClearAllTimers();
-      Initiate();
-
-    }
-
-  }
-
   void CheckAFK()
   {
 
@@ -192,51 +143,67 @@ final class AFK_Data
         //Player is AFK!
 
         //If Spectate is Enabled, then move to Spectate First
-        MessageWarnPlayer(pPlayer, "Before SpecTimer is: " + string(specTimerOn));
 
         if (g_ShouldSpec.GetBool())
         {
 
-          if (!specTimerOn && !kickTimerOn)
+          //We should warn player every few seconds about their AFK Status
+          if ( ((secondsUntilSpec % g_WarnInterval.GetInt()) == 0) && !isSpectate && (secondsUntilSpec != g_SecondsUntilSpec.GetInt()) )
           {
 
-            ClearInitTimer();
-            BeginSpecTimer();
-            UpdateLastOrigin();
-            MessageWarnPlayer(pPlayer, "SpecTimer is: " + string(specTimerOn));
-            //g_Scheduler.SetInterval("HasMovedSinceSpec", );
+            MessageWarnPlayer(pPlayer, string(secondsUntilSpec) + " seconds until you are moved to Specate for being AFK.");
 
           }
-          else if (specTimerOn && !kickTimerOn)
+
+          if ( ((secondsUntilKick % g_WarnInterval.GetInt()) == 0) && isSpectate && (secondsUntilKick != g_SecondsUntilKick.GetInt()) && g_ShouldKick.GetBool())
+          {
+
+            MessageWarnPlayer(pPlayer, "Move around a bit if you want to get out of Specate.");
+            MessageWarnPlayer(pPlayer, string(secondsUntilKick) + " seconds until you are kicked for being AFK.");
+
+          }
+
+          //If AFK for X seconds, move to spectate if they aren't already.
+          if ( (secondsUntilSpec <= 0) && !isSpectate)
           {
 
             MoveToSpectate();
-            MessageWarnPlayer(pPlayer, "SpecTimer2 is: " + string(specTimerOn));
-            ClearSpecTimer();
-            UpdateLastOrigin();
+            MessageWarnAllPlayers(pPlayer, (szPlayerName + " has been moved to spectate for being AFK."));
+
+          }
+          //If AFK for X seconds, kick them if they have been spectating, if config allows
+          else if ( (secondsUntilKick <= 0) && isSpectate && g_ShouldKick.GetBool() )
+          {
+
+            MessageWarnAllPlayers(pPlayer, (szPlayerName) + " has been kicked for being AFK.");
+            KickPlayer();
+
+          }
+          //Otherwise, decrease their count(s) until AFK action
+          else
+          {
+
+            secondsUntilSpec -= 1;
 
             if (g_ShouldKick.GetBool())
             {
 
-              BeginKickTimer();
+              if ( g_KickAdmins.GetBool() && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) && isSpectate)
+              {
+
+                secondsUntilKick -= 1;
+
+              }
+              else if (isSpectate)
+              {
+
+                secondsUntilKick -= 1;
+
+              }
 
             }
 
-          }
-          else if (!specTimerOn && kickTimerOn)
-          {
-
-            //Time to kick player
-            g_AdminControl.KickPlayer(pPlayer, -1);
-            g_PlayerFuncs.SayTextAll(pPlayer, "[AFKM] " + szPlayerName + " has been kicked for being AFK." + "\n" );
-
-          }
-          else
-          {
-
-            MessageWarnPlayer(pPlayer, "Uh... we shouldn't be here.");
-            ClearAllTimers();
-            Initiate();
+            UpdateLastOrigin();
 
           }
 
@@ -244,20 +211,35 @@ final class AFK_Data
         else /* If no Spectate, then assume kick only */
         {
 
-          if (!kickTimerOn)
+          //Again warn players, see above
+          if ( ((secondsUntilKick % g_WarnInterval.GetInt()) == 0))
           {
 
-            BeginKickTimer();
-            ClearInitTimer();
-            UpdateLastOrigin();
+            MessageWarnPlayer(pPlayer, string(secondsUntilKick) + " seconds until you are kicked for being AFK.");
 
           }
+
+          //Kick player if AFK after X seconds
+          if ( secondsUntilKick <= 0)
+          {
+
+            MessageWarnAllPlayers(pPlayer, (szPlayerName) + " has been kicked for being AFK.");
+            KickPlayer();
+
+          }
+          //Otherwise decrease count
           else
           {
 
-            //Time to kick player
-            g_AdminControl.KickPlayer(pPlayer, -1);
-            g_PlayerFuncs.SayTextAll(pPlayer, "[AFKM] " + szPlayerName + " has been kicked for being AFK." + "\n" );
+            if ( g_KickAdmins.GetBool() && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
+            {
+
+              secondsUntilKick -= 1;
+
+            }
+            else secondsUntilKick -= 1;
+
+            UpdateLastOrigin();
 
           }
 
@@ -268,18 +250,32 @@ final class AFK_Data
       {
 
         //Player is not AFK!
-        ClearAllTimers();
-        UpdateLastOrigin();
+
+        if (g_ShouldSpec.GetBool())
+        {
+
+          secondsUntilSpec = g_SecondsUntilSpec.GetInt();
+
+        }
+        if (g_ShouldKick.GetBool())
+        {
+
+          secondsUntilKick = g_SecondsUntilKick.GetInt();
+
+        }
+
+        //Get them out of Spectate because they are not AFK!
         if (isSpectate)
         {
 
           MessageWarnPlayer(pPlayer, "Moving you back to the game through respawn...");
+          isSpectate = false;
           g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
-          g_AdminControl.KillPlayer(pPlayer, 3);
+          g_AdminControl.KillPlayer(pPlayer, int(g_EngineFuncs.CVarGetFloat("mp_respawndelay")) );
 
         }
 
-        @initTimer = g_Scheduler.SetTimeout(this, "CheckAFK", 5);
+        UpdateLastOrigin();
 
       }
 
@@ -307,6 +303,8 @@ final class AFK_Data
     lastOrigin = pPlayer.GetOrigin();
 
   }
+
+  //Adding a default constructor for the SetInterval @ Initiate();
   AFK_Data()
   {
 
@@ -323,7 +321,8 @@ CCVar@ g_ShouldSpec;
 CCVar@ g_SecondsUntilSpec;
 CCVar@ g_ShouldKick;
 CCVar@ g_SecondsUntilKick;
-
+CCVar@ g_KickAdmins;
+CCVar@ g_WarnInterval;
 
 //Begin!
 
@@ -334,12 +333,14 @@ void PluginInit()
   g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44609-Plugin-RockTheVote");
   g_Hooks.RegisterHook(Hooks::Player::ClientPutInServer, @AddPlayer);
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect, @DisconnectCleanUp);
-  g_Hooks.RegisterHook(Hooks::Game::MapChange,@ResetVars);
+  g_Hooks.RegisterHook(Hooks::Game::MapChange, @ResetVars);
 
   @g_ShouldSpec = CCVar("bShouldSpec", true, "Should player be moved to spectate for being AFK?", ConCommandFlag::AdminOnly);
-  @g_SecondsUntilSpec = CCVar("secondsUntilSpec", 30, "Seconds until player should be moved to Spectate for being AFK", ConCommandFlag::AdminOnly);
+  @g_SecondsUntilSpec = CCVar("secondsUntilSpec", 150, "Seconds until player should be moved to Spectate for being AFK", ConCommandFlag::AdminOnly);
   @g_ShouldKick = CCVar("bShouldKick", true, "Should player be kicked for being AFK?", ConCommandFlag::AdminOnly);
-  @g_SecondsUntilKick = CCVar("secondsUntilKick", 90, "Seconds until player ", ConCommandFlag::AdminOnly);
+  @g_SecondsUntilKick = CCVar("secondsUntilKick", 600, "Seconds until player ", ConCommandFlag::AdminOnly);
+  @g_KickAdmins = CCVar("bKickAdmins", true, "Should admins/owners be kicked for being AFK?", ConCommandFlag::AdminOnly);
+  @g_WarnInterval = CCVar("secondsWarnInterval", 15, "How many seconds should lapse until player is warned that AFK action will be taken", ConCommandFlag::AdminOnly);
 
 }
 
@@ -357,12 +358,25 @@ void MapActivate()
 HookReturnCode AddPlayer(CBasePlayer@ pPlayer)
 {
 
-  AFK_Data@ afkdataobj = AFK_Data(pPlayer);
-  @afk_plr_data[pPlayer.entindex() - 1] = @afkdataobj;
+  if (g_ShouldSpec.GetBool() || g_ShouldKick.GetBool())
+  {
 
-  afkdataobj.Initiate();
+    AFK_Data@ afkdataobj = AFK_Data(pPlayer);
+    @afk_plr_data[pPlayer.entindex() - 1] = @afkdataobj;
 
-  return HOOK_HANDLED;
+    afkdataobj.Initiate();
+
+    return HOOK_HANDLED;
+
+  }
+  else
+  {
+
+    g_Game.AlertMessage(at_logged, "AFK Manager disabled due to both functions being turned off.\n");
+    return HOOK_HANDLED;
+
+  }
+
 
 }
 
@@ -370,7 +384,7 @@ HookReturnCode DisconnectCleanUp(CBasePlayer@ pPlayer)
 {
 
   AFK_Data@ afkdataobj = @afk_plr_data[pPlayer.entindex() - 1];
-  afkdataobj.ClearAllTimers();
+  afkdataobj.ClearInitTimer();
   @afkdataobj = null;
 
   return HOOK_HANDLED;
@@ -383,7 +397,7 @@ HookReturnCode ResetVars()
   for (size_t i = 0; i < afk_plr_data.length(); i++)
   {
 
-    afk_plr_data[i].ClearAllTimers();
+    afk_plr_data[i].ClearInitTimer();
 
   }
 
@@ -395,6 +409,13 @@ void MessageWarnPlayer(CBasePlayer@ pPlayer, string msg)
 {
 
   g_PlayerFuncs.SayText( pPlayer, "[AFKM] " + msg + "\n");
+
+}
+
+void MessageWarnAllPlayers(CBasePlayer@ pPlayer, string msg)
+{
+
+  g_PlayerFuncs.SayTextAll( pPlayer, "[AFKM] " + msg + "\n");
 
 }
 
