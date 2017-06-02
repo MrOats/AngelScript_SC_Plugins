@@ -330,7 +330,7 @@ void PluginInit()
 {
 
   g_Module.ScriptInfo.SetAuthor("MrOats");
-  g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44609-Plugin-RockTheVote");
+  g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44666-Plugin-AFK-Manager");
   g_Hooks.RegisterHook(Hooks::Player::ClientPutInServer, @AddPlayer);
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn, @CheckSpectate);
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect, @DisconnectCleanUp);
