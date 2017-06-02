@@ -73,7 +73,6 @@ final class RTV_Data
 
 //ClientCommands
 
-CClientCommand printforce("printnom", "Nominate a Map!", @PrintNom);
 CClientCommand rtv("rtv", "Rock the Vote!", @RtvPush);
 CClientCommand nominate("nominate", "Nominate a Map!", @NomPush);
 CClientCommand forcevote("forcevote", "Lets admin force a vote", @ForceVote, ConCommandFlag::AdminOnly);
@@ -258,16 +257,6 @@ void DecrementSeconds()
     g_SecondsUntilVote.SetInt(g_SecondsUntilVote.GetInt() - 1);
 
   }
-
-}
-
-void PrintNom(const CCommand@ pArguments)
-{
-
-  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
-
-  for (uint i = 0; i < forcenommaps.length(); i++)
-    MessageWarnPlayer(pPlayer, string(i)+": "+forcenommaps[i]);
 
 }
 
