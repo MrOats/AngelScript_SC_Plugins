@@ -287,7 +287,7 @@ final class AFK_Data
   {
 
     isSpectate = true;
-    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
+    pPlayer.GetObserver().StartObserver( lastOrigin, pPlayer.pev.angles, false );
     g_Scheduler.SetTimeout("SetRespawnTime", .75f, @pPlayer);
 
   }
@@ -332,15 +332,16 @@ void PluginInit()
   g_Module.ScriptInfo.SetAuthor("MrOats");
   g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44609-Plugin-RockTheVote");
   g_Hooks.RegisterHook(Hooks::Player::ClientPutInServer, @AddPlayer);
+  g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn, @CheckSpectate);
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect, @DisconnectCleanUp);
   g_Hooks.RegisterHook(Hooks::Game::MapChange, @ResetVars);
 
   @g_ShouldSpec = CCVar("bShouldSpec", true, "Should player be moved to spectate for being AFK?", ConCommandFlag::AdminOnly);
-  @g_SecondsUntilSpec = CCVar("secondsUntilSpec", 150, "Seconds until player should be moved to Spectate for being AFK", ConCommandFlag::AdminOnly);
+  @g_SecondsUntilSpec = CCVar("secondsUntilSpec", 180, "Seconds until player should be moved to Spectate for being AFK", ConCommandFlag::AdminOnly);
   @g_ShouldKick = CCVar("bShouldKick", true, "Should player be kicked for being AFK?", ConCommandFlag::AdminOnly);
   @g_SecondsUntilKick = CCVar("secondsUntilKick", 600, "Seconds until player ", ConCommandFlag::AdminOnly);
   @g_KickAdmins = CCVar("bKickAdmins", true, "Should admins/owners be kicked for being AFK?", ConCommandFlag::AdminOnly);
-  @g_WarnInterval = CCVar("secondsWarnInterval", 15, "How many seconds should lapse until player is warned that AFK action will be taken", ConCommandFlag::AdminOnly);
+  @g_WarnInterval = CCVar("secondsWarnInterval", 30, "How many seconds should lapse until player is warned that AFK action will be taken", ConCommandFlag::AdminOnly);
 
 }
 
@@ -348,7 +349,7 @@ void MapActivate()
 {
 
   afk_plr_data.resize(g_Engine.maxClients);
-  for (size_t i = 0; i < afk_plr_data.length(); i++)
+  for (uint i = 0; i < afk_plr_data.length(); i++)
   {
     @afk_plr_data[i] = null;
   }
@@ -380,6 +381,30 @@ HookReturnCode AddPlayer(CBasePlayer@ pPlayer)
 
 }
 
+HookReturnCode CheckSpectate(CBasePlayer@ pPlayer)
+{
+
+  AFK_Data@ afkdataobj = @afk_plr_data[pPlayer.entindex() - 1];
+
+  if (afkdataobj !is null && pPlayer.IsConnected())
+  {
+
+    if (afkdataobj.isSpectate)
+    {
+
+      afkdataobj.MoveToSpectate();
+      return HOOK_HANDLED;
+
+    }
+    else
+      return HOOK_HANDLED;
+
+  }
+  else
+    return HOOK_HANDLED;
+
+}
+
 HookReturnCode DisconnectCleanUp(CBasePlayer@ pPlayer)
 {
 
@@ -394,7 +419,7 @@ HookReturnCode DisconnectCleanUp(CBasePlayer@ pPlayer)
 HookReturnCode ResetVars()
 {
 
-  for (size_t i = 0; i < afk_plr_data.length(); i++)
+  for (uint i = 0; i < afk_plr_data.length(); i++)
   {
 
     afk_plr_data[i].ClearInitTimer();
