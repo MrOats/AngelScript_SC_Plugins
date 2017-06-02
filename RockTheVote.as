@@ -73,8 +73,12 @@ final class RTV_Data
 
 //ClientCommands
 
+CClientCommand printforce("printnom", "Nominate a Map!", @PrintNom);
 CClientCommand rtv("rtv", "Rock the Vote!", @RtvPush);
 CClientCommand nominate("nominate", "Nominate a Map!", @NomPush);
+CClientCommand forcevote("forcevote", "Lets admin force a vote", @ForceVote, ConCommandFlag::AdminOnly);
+CClientCommand addnominatemap("addnominatemap", "Lets admin add as many nominatable maps as possible", @AddNominateMap, ConCommandFlag::AdminOnly);
+CClientCommand removenominatemap("removenominatemap", "Lets admin add as many nominatable maps as possible", @RemoveNominateMap, ConCommandFlag::AdminOnly);
 
 //Global Vars
 
@@ -82,6 +86,8 @@ CTextMenu@ rtvmenu = null;
 CTextMenu@ nommenu = null;
 
 array<RTV_Data@> rtv_plr_data;
+array<string> forcenommaps;
+array<string> prevmaps;
 
 
 bool isVoting = false;
@@ -95,6 +101,7 @@ CCVar@ g_MaxMapsToVote;
 CCVar@ g_VotingPeriodTime;
 CCVar@ g_PercentageRequired;
 CCVar@ g_ChooseEnding;
+CCVar@ g_ExcludePrevMaps;
 
 //Global Timers/Schedulers
 
@@ -119,7 +126,8 @@ void PluginInit()
   @g_MaxMapsToVote = CCVar("iMaxMaps", 9, "How many maps can players nominate and vote for later", ConCommandFlag::AdminOnly);
   @g_VotingPeriodTime = CCVar("secondsToVote", 25, "How long can players vote for a map before a map is chosen", ConCommandFlag::AdminOnly);
   @g_PercentageRequired = CCVar("iPercentReq", 66, "0-100, percent of players required to RTV before voting happens", ConCommandFlag::AdminOnly);
-  @g_ChooseEnding = CCVar("iChooseEnding",1, "Set to 1 to revote when a tie happens, 2 to choose randomly amongst the ties, 3 to await RTV again", ConCommandFlag::AdminOnly);
+  @g_ChooseEnding = CCVar("iChooseEnding", 1, "Set to 1 to revote when a tie happens, 2 to choose randomly amongst the ties, 3 to await RTV again", ConCommandFlag::AdminOnly);
+  @g_ExcludePrevMaps = CCVar("iExcludePrevMaps", 0, "How many maps to exclude from nomination or voting", ConCommandFlag::AdminOnly);
 
 }
 
@@ -133,12 +141,24 @@ void MapActivate()
   @g_TimeToVote = null;
   @g_TimeUntilVote = null;
 
+  //int prevmaps_len = int(prevmaps.length());
+  if (g_ExcludePrevMaps.GetInt() < 0)
+    g_ExcludePrevMaps.SetInt(0);
+
+
+  if ( int(prevmaps.length()) > g_ExcludePrevMaps.GetInt())
+    prevmaps.removeAt(0);
+
+  prevmaps.insertLast(g_Engine.mapname);
 
   rtv_plr_data.resize(g_Engine.maxClients);
-  for (size_t i = 0; i < rtv_plr_data.length(); i++)
-  {
+  for (uint i = 0; i < rtv_plr_data.length(); i++)
     @rtv_plr_data[i] = null;
-  }
+
+  for (uint i = 0; i < forcenommaps.length(); i++)
+    forcenommaps[i] = "";
+
+    forcenommaps.resize(0);
 
   if(@rtvmenu !is null)
   {
@@ -175,6 +195,15 @@ HookReturnCode Decider(SayParameters@ pParams)
     return HOOK_HANDLED;
 
   }
+  /* Will do this if need be...
+  else if (pArguments[0] == "!forcevote")
+  {
+
+    ForceVote(@pArguments, @pPlayer);
+    return HOOK_HANDLED;
+
+  }
+  */
   else return HOOK_CONTINUE;
 
 }
@@ -232,6 +261,16 @@ void DecrementSeconds()
 
 }
 
+void PrintNom(const CCommand@ pArguments)
+{
+
+  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+
+  for (uint i = 0; i < forcenommaps.length(); i++)
+    MessageWarnPlayer(pPlayer, string(i)+": "+forcenommaps[i]);
+
+}
+
 void RtvPush(const CCommand@ pArguments, CBasePlayer@ pPlayer)
 {
 
@@ -252,7 +291,7 @@ void RtvPush(const CCommand@ pArguments, CBasePlayer@ pPlayer)
     else
     {
 
-      g_PlayerFuncs.SayTextAll(pPlayer, "RTV will enable in " + g_SecondsUntilVote.GetInt() +" seconds.\n" );
+      MessageWarnAllPlayers(pPlayer, "RTV will enable in " + g_SecondsUntilVote.GetInt() + " seconds." );
 
     }
 
@@ -264,6 +303,7 @@ void RtvPush(const CCommand@ pArguments)
 {
 
   CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+
   if (isVoting)
   {
 
@@ -281,7 +321,7 @@ void RtvPush(const CCommand@ pArguments)
     else
     {
 
-      g_PlayerFuncs.SayTextAll(pPlayer, "RTV will enable in " + g_SecondsUntilVote.GetInt() +" seconds.\n" );
+      MessageWarnAllPlayers(pPlayer, "RTV will enable in " + g_SecondsUntilVote.GetInt() + " seconds." );
 
     }
 
@@ -295,7 +335,7 @@ void NomPush(const CCommand@ pArguments, CBasePlayer@ pPlayer)
   if (pArguments.ArgC() == 2)
   {
 
-    NominateMap(pPlayer,pArguments.Arg(1));
+    NominateMap(pPlayer, pArguments.Arg(1));
 
   }
   else if (pArguments.ArgC() == 1)
@@ -328,6 +368,188 @@ void NomPush(const CCommand@ pArguments)
 
 }
 
+void ForceVote(const CCommand@ pArguments, CBasePlayer@ pPlayer)
+{
+
+  if (pArguments.ArgC() >= 2)
+  {
+
+    array<string> rtvList;
+
+    for (int i = 1; i < pArguments.ArgC(); i++)
+    {
+
+      if (g_EngineFuncs.IsMapValid(pArguments.Arg(i)))
+        rtvList.insertLast(pArguments.Arg(i));
+      else
+        MessageWarnPlayer(pPlayer, pArguments.Arg(i) + " is not a valid map. Skipping...");
+
+    }
+
+    VoteMenu(rtvList);
+    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+
+  }
+  else if (pArguments.ArgC() == 1)
+  {
+
+    BeginVote();
+    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+
+  }
+
+}
+
+void ForceVote(const CCommand@ pArguments)
+{
+
+  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+
+  if (pArguments.ArgC() >= 2)
+  {
+
+    array<string> rtvList;
+
+    for (int i = 1; i < pArguments.ArgC(); i++)
+    {
+
+      if (g_EngineFuncs.IsMapValid(pArguments.Arg(i)))
+        rtvList.insertLast(pArguments.Arg(i));
+      else
+        MessageWarnPlayer(pPlayer, pArguments.Arg(i) + " is not a valid map. Skipping...");
+
+    }
+
+    VoteMenu(rtvList);
+    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+
+  }
+  else if (pArguments.ArgC() == 1)
+  {
+
+    BeginVote();
+    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+
+  }
+
+}
+
+void AddNominateMap(const CCommand@ pArguments)
+{
+
+  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+  array<string> plrnom = GetNominatedMaps();
+
+
+  if (pArguments.ArgC() == 1)
+  {
+
+    MessageWarnPlayer(pPlayer, "You did not specify a map to nominate. Try again.");
+    return;
+
+  }
+
+  if (g_EngineFuncs.IsMapValid(pArguments.Arg(1)))
+  {
+
+    if ( (plrnom.find(pArguments.Arg(1)) < 0) && (forcenommaps.find(pArguments.Arg(1)) < 0) )
+    {
+
+      forcenommaps.insertLast(pArguments.Arg(1));
+      MessageWarnPlayer(pPlayer, "Map was added to force nominated maps list");
+
+    }
+    else
+      MessageWarnPlayer(pPlayer, "Map was already nominated by someone else. Skipping...");
+
+  }
+  else
+    MessageWarnPlayer(pPlayer, "Map does not exist. Skipping...");
+
+
+}
+
+void RemoveNominateMap(const CCommand@ pArguments)
+{
+
+  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+  array<string> plrnom = GetNominatedMaps();
+
+
+  if (pArguments.ArgC() == 1)
+  {
+
+    MessageWarnPlayer(pPlayer, "You did not specify a map to remove from nominations. Try again.");
+    return;
+
+  }
+
+
+    if (plrnom.find(pArguments.Arg(1)) >= 0)
+    {
+
+      //Let's figure out who nominated that map and remove it...
+      for (uint i = 0; i < rtv_plr_data.length(); i++)
+      {
+
+          if (@rtv_plr_data[i] !is null)
+          {
+
+            if (rtv_plr_data[i].szNominatedMap == pArguments.Arg(1))
+              {
+
+                MessageWarnAllPlayers(pPlayer, string(rtv_plr_data[i].szPlayerName + " has removed " + rtv_plr_data[i].szPlayerName + " nomination of " + rtv_plr_data[i].szNominatedMap));
+                rtv_plr_data[i].szNominatedMap = "";
+
+              }
+
+          }
+      }
+
+    }
+    else if (forcenommaps.find(pArguments.Arg(1)) >= 0)
+    {
+
+      forcenommaps.removeAt(forcenommaps.find(pArguments.Arg(1)));
+      MessageWarnPlayer(pPlayer, pArguments.Arg(1) +  " was removed from admin's nominations");
+
+    }
+    else MessageWarnPlayer(pPlayer, pArguments.Arg(1) + " was not nominated. Skipping...");
+
+}
+
+CBasePlayer@ PickRandomPlayer()
+{
+
+  CBasePlayer@ pPlayer;
+  for (int i = 1; i <= g_Engine.maxClients; i++)
+  {
+
+    @pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+    if ( (pPlayer !is null) && (pPlayer.IsConnected()) )
+      break;
+
+  }
+
+  return @pPlayer;
+
+}
+
+void MessageWarnPlayer(CBasePlayer@ pPlayer, string msg)
+{
+
+  g_PlayerFuncs.SayText( pPlayer, "[RTV] " + msg + "\n");
+
+}
+
+void MessageWarnAllPlayers(CBasePlayer@ pPlayer, string msg)
+{
+
+  g_PlayerFuncs.SayTextAll( pPlayer, "[RTV] " + msg + "\n");
+
+}
+
+
 void NominateMap( CBasePlayer@ pPlayer, string szMapName )
 {
 
@@ -339,7 +561,23 @@ void NominateMap( CBasePlayer@ pPlayer, string szMapName )
   if ( mapList.find( szMapName ) < 0 )
   {
 
-    g_PlayerFuncs.SayText( pPlayer, "Map does not exist.\n" );
+    MessageWarnPlayer( pPlayer, "Map does not exist." );
+    return;
+
+  }
+
+  if (prevmaps.find( szMapName ) >= 0)
+  {
+
+    MessageWarnPlayer( pPlayer, "Map has already been played and will be excluded until later.");
+    return;
+
+  }
+
+  if ( forcenommaps.find( szMapName ) >= 0 )
+  {
+
+    MessageWarnPlayer( pPlayer, "\"" + szMapName + "\" was found in the admin's list of nominated maps.");
     return;
 
   }
@@ -347,7 +585,7 @@ void NominateMap( CBasePlayer@ pPlayer, string szMapName )
   if ( mapsNominated.find( szMapName ) >= 0 )
   {
 
-    g_PlayerFuncs.SayText( pPlayer, "Someone nominated \"" + szMapName + "\" already.\n");
+    MessageWarnPlayer( pPlayer, "Someone nominated \"" + szMapName + "\" already.");
     return;
 
   }
@@ -355,7 +593,7 @@ void NominateMap( CBasePlayer@ pPlayer, string szMapName )
   if ( int(mapsNominated.length()) > g_MaxMapsToVote.GetInt() )
   {
 
-    g_PlayerFuncs.SayText( pPlayer, "Players have reached maxed number of nominations!\n" );
+    MessageWarnPlayer( pPlayer, "Players have reached maxed number of nominations!" );
     return;
 
   }
@@ -363,7 +601,7 @@ void NominateMap( CBasePlayer@ pPlayer, string szMapName )
   if ( rtvdataobj.szNominatedMap.IsEmpty() )
   {
 
-    g_PlayerFuncs.SayTextAll( pPlayer, rtvdataobj.szPlayerName + " has nominated \"" + szMapName + "\".\n" );
+    MessageWarnAllPlayers( pPlayer, rtvdataobj.szPlayerName + " has nominated \"" + szMapName + "\"." );
     rtvdataobj.szNominatedMap = szMapName;
     return;
 
@@ -371,7 +609,7 @@ void NominateMap( CBasePlayer@ pPlayer, string szMapName )
   else
   {
 
-    g_PlayerFuncs.SayTextAll( pPlayer, rtvdataobj.szPlayerName + " has changed their nomination to \"" + szMapName + "\".\n" );
+    MessageWarnAllPlayers( pPlayer, rtvdataobj.szPlayerName + " has changed their nomination to \"" + szMapName + "\"." );
     rtvdataobj.szNominatedMap = szMapName;
     return;
 
@@ -403,16 +641,32 @@ void NominateMenu( CBasePlayer@ pPlayer )
 
       array<string> mapList = GetMapList();
 
-      for (uint i = 0; i < mapList.length(); ++i) {
-        nommenu.AddItem( mapList[i], any(mapList[i]));
-      }
-
-      if (!(nommenu.IsRegistered()))
+      //Remove any maps found in the previous map exclusion list or force nominated maps
+      for (uint i = 0; i < mapList.length(); i++)
       {
 
-        nommenu.Register();
+        if ((prevmaps.find(string(mapList[i])) >= 0))
+        {
+
+          mapList.removeAt(i);
+
+        }
+        else if((forcenommaps.find(string(mapList[i])) >= 0))
+        {
+
+          mapList.removeAt(i);
+
+        }
 
       }
+
+      //mapList.sortAsc();
+
+      for (uint i = 0; i < mapList.length(); i++)
+        nommenu.AddItem( mapList[i], any(mapList[i]));
+
+      if (!(nommenu.IsRegistered()))
+        nommenu.Register();
 
       nommenu.Open( 0, 0, pPlayer );
 
@@ -427,16 +681,16 @@ void RockTheVote(CBasePlayer@ pPlayer)
   if (rtvdataobj.bHasRTV)
   {
 
-    g_PlayerFuncs.SayText(pPlayer,"You have already Rocked the Vote!\n");
-    g_PlayerFuncs.SayTextAll(pPlayer,"" + GetRTVd() + " of " + rtvRequired + " players until vote initiates!\n");
+    MessageWarnPlayer(pPlayer,"You have already Rocked the Vote!");
+    MessageWarnAllPlayers(pPlayer,"" + GetRTVd() + " of " + rtvRequired + " players until vote initiates!");
 
   }
   else
   {
 
     rtvdataobj.bHasRTV = true;
-    g_PlayerFuncs.SayText(pPlayer,"You have Rocked the Vote!");
-    g_PlayerFuncs.SayTextAll(pPlayer,"" + GetRTVd() + " of " + rtvRequired + " players until vote initiates!\n");
+    MessageWarnPlayer(pPlayer,"You have Rocked the Vote!");
+    MessageWarnAllPlayers(pPlayer,"" + GetRTVd() + " of " + rtvRequired + " players until vote initiates!");
 
   }
 
@@ -468,11 +722,12 @@ void rtv_MenuCallback(CTextMenu@ rtvmenu, CBasePlayer@ pPlayer, int page, const 
 void VoteMenu(array<string> rtvList)
 {
 
-  g_PlayerFuncs.CenterPrintAll("You have " + g_VotingPeriodTime.GetInt() + " seconds to vote!\n");
+  canRTV = true;
+  MessageWarnAllPlayers( PickRandomPlayer(), "You have " + g_VotingPeriodTime.GetInt() + " seconds to vote!");
 
   @rtvmenu = CTextMenu(@rtv_MenuCallback);
   rtvmenu.SetTitle("RTV Vote");
-  for (uint i = 0; i < rtvList.length(); ++i)
+  for (uint i = 0; i < rtvList.length(); i++)
   {
 
     rtvmenu.AddItem(rtvList[i], any(rtvList[i]));
@@ -511,14 +766,14 @@ void vote(string votedMap,CBasePlayer@ pPlayer)
   {
 
     rtvdataobj.szVotedMap = votedMap;
-    g_PlayerFuncs.SayText(pPlayer,"You voted for " + votedMap + "\n");
+    MessageWarnPlayer(pPlayer,"You voted for " + votedMap);
 
   }
   else
   {
 
     rtvdataobj.szVotedMap = votedMap;
-    g_PlayerFuncs.SayText(pPlayer,"You changed your vote to "+ votedMap + "\n");
+    MessageWarnPlayer(pPlayer,"You changed your vote to "+ votedMap);
 
   }
 
@@ -528,22 +783,24 @@ void vote(string votedMap,CBasePlayer@ pPlayer)
 void BeginVote()
 {
 
+  canRTV = true;
+
   array<string> rtvList;
   array<string> mapsNominated = GetNominatedMaps();
   array<string> templist = GetMapList();
 
-  for (uint i = 0; i < mapsNominated.length(); i++)
-  {
+  for (uint i = 0; i < forcenommaps.length(); i++)
+    rtvList.insertLast(forcenommaps[i]);
 
+  for (uint i = 0; i < mapsNominated.length(); i++)
     rtvList.insertLast(mapsNominated[i]);
 
-  }
 
-  //In case our given list of maps is less than g_MaxMapsToVote
+  //If our given list of maps is less than g_MaxMapsToVote, then fill rtvList with rest of un-nominated list of maps
   if (int(templist.length()) < g_MaxMapsToVote.GetInt())
   {
 
-    for (size_t i = 0; i < templist.length(); i++)
+    for (uint i = 0; i < templist.length(); i++)
     {
 
       if (rtvList.find(templist[i]) < 0)
@@ -564,7 +821,7 @@ void BeginVote()
 
       string rMap = RandomMap();
 
-      if ( (rtvList.find(rMap)) < 0)
+      if ( ((rtvList.find(rMap)) < 0) && (prevmaps.find(rMap) < 0))
       {
 
         rtvList.insertLast(rMap);
@@ -588,14 +845,14 @@ void PostVote()
   int highestVotes = 0;
 
   //Initialize Dictionary of votes
-  for (size_t i = 0; i < rtvList.length(); i++)
+  for (uint i = 0; i < rtvList.length(); i++)
   {
 
     rtvVotes.set( rtvList[i], 0);
 
   }
 
-  for (size_t i = 0; i < rtvList.length(); i++)
+  for (uint i = 0; i < rtvList.length(); i++)
   {
 
     int val = int(rtvVotes[rtvList[i]]);
@@ -604,7 +861,7 @@ void PostVote()
   }
 
   //Find highest amount of votes
-  for (size_t i = 0; i < rtvList.length(); i++)
+  for (uint i = 0; i < rtvList.length(); i++)
   {
 
     if ( int( rtvVotes[rtvList[i]] ) >= highestVotes)
@@ -620,7 +877,7 @@ void PostVote()
   {
 
     string chosenMap = RandomMap();
-    g_PlayerFuncs.CenterPrintAll("\"" + chosenMap +"\" has been randomly chosen since nobody picked\n");
+    MessageWarnAllPlayers( PickRandomPlayer(), "\"" + chosenMap +"\" has been randomly chosen since nobody picked");
     ChooseMap(chosenMap, false);
     return;
 
@@ -629,7 +886,7 @@ void PostVote()
   //Find how many maps were voted at the highest
   array<string> candidates;
   array<string> singlecount = rtvVotes.getKeys();
-  for (size_t i = 0; i < singlecount.length(); i++)
+  for (uint i = 0; i < singlecount.length(); i++)
   {
 
     if ( int(rtvVotes[singlecount[i]]) == highestVotes)
@@ -649,7 +906,7 @@ void PostVote()
     {
 
       ClearVotedMaps();
-      g_PlayerFuncs.CenterPrintAll("There was a tie! Revoting...\n");
+      MessageWarnAllPlayers( PickRandomPlayer(), "There was a tie! Revoting...");
       @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
       VoteMenu(candidates);
       return;
@@ -659,7 +916,7 @@ void PostVote()
     {
 
       string chosenMap = RandomMap(candidates);
-      g_PlayerFuncs.CenterPrintAll("\"" + chosenMap +"\" has been randomly chosen amongst the tied\n");
+      MessageWarnAllPlayers( PickRandomPlayer(), "\"" + chosenMap +"\" has been randomly chosen amongst the tied");
       ChooseMap(chosenMap, false);
       return;
 
@@ -670,7 +927,7 @@ void PostVote()
       ClearVotedMaps();
       ClearRTV();
 
-      g_PlayerFuncs.CenterPrintAll("There was a tie! Please RTV again...\n");
+      MessageWarnAllPlayers( PickRandomPlayer(), "There was a tie! Please RTV again...");
 
     }
     else
@@ -679,7 +936,7 @@ void PostVote()
   else
   {
 
-    g_PlayerFuncs.CenterPrintAll("\"" + candidates[0] +"\" has been chosen!\n");
+    MessageWarnAllPlayers( PickRandomPlayer(), "\"" + candidates[0] +"\" has been chosen!");
     ChooseMap(candidates[0], false);
     return;
 
@@ -705,7 +962,7 @@ void ChooseMap(string chosenMap, bool forcechange)
   if (g_WhenToChange.GetInt() < 0)
   {
 
-    //Handle "infinite time left" maps by setting time left to 10 minutes
+    //Handle "infinite time left" maps by setting time left to X minutes
     if (g_EngineFuncs.CVarGetFloat("mp_timelimit") == 0)
     {
 
@@ -722,7 +979,7 @@ void ChooseMap(string chosenMap, bool forcechange)
     */
     g_EngineFuncs.ServerCommand("mp_nextmap " + chosenMap + "\n");
     g_EngineFuncs.ServerCommand("mp_nextmap_cycle " + chosenMap + "\n");
-    g_PlayerFuncs.CenterPrintAll("Next map has been set to \"" + chosenMap + "\".\n");
+    MessageWarnAllPlayers( PickRandomPlayer(), "Next map has been set to \"" + chosenMap + "\".");
 
   }
 
@@ -764,7 +1021,7 @@ array<string> GetNominatedMaps()
 {
   array<string> nommaps;
 
-  for (size_t i = 0; i < rtv_plr_data.length(); i++)
+  for (uint i = 0; i < rtv_plr_data.length(); i++)
   {
 
     RTV_Data@ pPlayer = @rtv_plr_data[i];
@@ -774,6 +1031,7 @@ array<string> GetNominatedMaps()
         nommaps.insertLast(pPlayer.szNominatedMap);
 
   }
+
 
   return nommaps;
 }
@@ -814,7 +1072,7 @@ array<string> GetMapList()
       file.Close();
 
       //Probably wanna make sure all maps are valid...
-      for (size_t i = 0; i < mapList.length(); i++)
+      for (uint i = 0; i < mapList.length(); i++)
       {
 
         if ( !(g_EngineFuncs.IsMapValid(mapList[i])) )
@@ -843,7 +1101,7 @@ array<string> GetVotedMaps()
 
   array<string> votedmaps;
 
-  for (size_t i = 0; i < rtv_plr_data.length(); i++)
+  for (uint i = 0; i < rtv_plr_data.length(); i++)
   {
 
     if (@rtv_plr_data[i] !is null)
@@ -860,7 +1118,7 @@ int GetRTVd()
 {
 
   int counter = 0;
-  for (size_t i = 0; i < rtv_plr_data.length(); i++)
+  for (uint i = 0; i < rtv_plr_data.length(); i++)
   {
 
     if (@rtv_plr_data[i] !is null)
@@ -876,7 +1134,7 @@ int GetRTVd()
 void ClearVotedMaps()
 {
 
-  for (size_t i = 0; i < rtv_plr_data.length(); i++)
+  for (uint i = 0; i < rtv_plr_data.length(); i++)
   {
 
     if (@rtv_plr_data[i] !is null)
@@ -893,7 +1151,7 @@ void ClearVotedMaps()
 void ClearRTV()
 {
 
-  for (size_t i = 0; i < rtv_plr_data.length(); i++)
+  for (uint i = 0; i < rtv_plr_data.length(); i++)
   {
 
     if (@rtv_plr_data[i] !is null)
