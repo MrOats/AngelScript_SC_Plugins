@@ -642,25 +642,19 @@ void NominateMenu( CBasePlayer@ pPlayer )
       array<string> mapList = GetMapList();
 
       //Remove any maps found in the previous map exclusion list or force nominated maps
-      for (uint i = 0; i < mapList.length(); i++)
+      for (uint i = 0; i < mapList.length();)
       {
 
-        if ((prevmaps.find(string(mapList[i])) >= 0))
-        {
-
+        if ((prevmaps.find(mapList[i]) >= 0))
           mapList.removeAt(i);
-
-        }
-        else if((forcenommaps.find(string(mapList[i])) >= 0))
-        {
-
+        else if((forcenommaps.find(mapList[i]) >= 0))
           mapList.removeAt(i);
-
-        }
+        else
+          ++i;
 
       }
 
-      //mapList.sortAsc();
+      mapList.sortAsc();
 
       for (uint i = 0; i < mapList.length(); i++)
         nommenu.AddItem( mapList[i], any(mapList[i]));
@@ -1072,7 +1066,7 @@ array<string> GetMapList()
       file.Close();
 
       //Probably wanna make sure all maps are valid...
-      for (uint i = 0; i < mapList.length(); i++)
+      for (uint i = 0; i < mapList.length();)
       {
 
         if ( !(g_EngineFuncs.IsMapValid(mapList[i])) )
@@ -1081,6 +1075,8 @@ array<string> GetMapList()
           mapList.removeAt(i);
 
         }
+        else
+          ++i;
 
       }
 
