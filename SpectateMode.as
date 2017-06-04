@@ -14,16 +14,16 @@ Thank you to all those who have assisted me with this plugin!
 
 //Globals
 
-CScheduledFunction@ g_pSetRespawn = null;
 array<bool> bSpectatePlease(8, false);
 const float MAX_FLOAT = Math.FLOAT_MAX;
 CClientCommand spectate("spectate", "Toggles Player's spectate state", @toggleSpectate );
+//CClientCommand respawn("respawn", "Debug Command", @RespawnMe );
 
 //Config
 
 bool adminOnly = false;
 
-//Main Functions
+//Plugin Initialization Functions
 
 void PluginInit()
 {
@@ -31,10 +31,9 @@ void PluginInit()
   g_Module.ScriptInfo.SetAuthor("MrOats");
   g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44306-Plugin-SpectateMode");
   g_Hooks.RegisterHook(Hooks::Player::ClientDisconnect,@RemoveSpecStatus);
-  g_Hooks.RegisterHook(Hooks::Game::MapChange,@EndTimerFuncs);
   g_Hooks.RegisterHook(Hooks::Player::PlayerSpawn,@CheckSpectate);
-  g_Hooks.RegisterHook(Hooks::Player::ClientSay, @DeciderClient);
-  /* g_Hooks.RegisterHook(Hooks::Player::PlayerCanRespawn,@PreventRespawn); <-- See function for notes */
+  g_Hooks.RegisterHook(Hooks::Player::ClientSay, @Decider);
+  //g_Hooks.RegisterHook(Hooks::Player::PlayerCanRespawn,@PreventRespawn); //<-- See function for notes
 
   /*Just in case as_reloadplugins is called
   bSpectatePlease.resize(g_Engine.maxClients);
@@ -61,89 +60,12 @@ void MapActivate()
     bSpectatePlease[i] = false;
   }
 
-  if(g_pSetRespawn !is null)
-    g_Scheduler.RemoveTimer(g_pSetRespawn);
-
-  @g_pSetRespawn = g_Scheduler.SetInterval("SetRespawnTime", .5f, g_Scheduler.REPEAT_INFINITE_TIMES);
 
 }
 
-void toggleSpectate(const CCommand@ pArguments, CBasePlayer@ pPlayer)
-{
+//Hooks
 
-
-  if (bSpectatePlease[pPlayer.entindex() - 1])
-  ExitSpectate(pPlayer);
-  else EnterSpectate(pPlayer);
-
-}
-
-void toggleSpectate(const CCommand@ pArguments)
-{
-
-  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
-
-  if (bSpectatePlease[pPlayer.entindex() - 1])
-    ExitSpectate(pPlayer);
-  else EnterSpectate(pPlayer);
-
-}
-
-
-void SetRespawnTime()
-{
-
-/*
-The reason why we are still using a Scheduler that
-runs constantly at a <1 second interval is because
-the game isn't setting the player's respawn timer when
-I try setting it once. Tried using a PlayerSpawn hook and
-a PlayerKilled hook to set it at those times, even when I put
-the player to Observer Mode.
-
-This "hack" will remain until a proper "run-once" solution is set on a
-per-player basis.
-*/
-
-
-  for (int i = 1; i <= g_Engine.maxClients; i++)
-  {
-
-    CBasePlayer@ pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
-
-    if ((pPlayer !is null) && (bSpectatePlease[pPlayer.entindex() - 1]))
-      pPlayer.m_flRespawnDelayTime = MAX_FLOAT;
-
-  }
-
-}
-
-void EnterSpectate(CBasePlayer@ pPlayer)
-{
-
-  if (adminOnly && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
-    bSpectatePlease[pPlayer.entindex() - 1] = true;
-  else if (!adminOnly)
-    bSpectatePlease[pPlayer.entindex() - 1] = true;
-
-  if(!pPlayer.GetObserver().IsObserver())
-  pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
-
-}
-
-void ExitSpectate(CBasePlayer@ pPlayer)
-{
-
-  //g_Game.AlertMessage(at_console, "Exiting SpectateMode\n");
-  bSpectatePlease[pPlayer.entindex() - 1] = false;
-
-  //Reset the player's respawn time by respawning and killing.
-  g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
-  g_AdminControl.KillPlayer(pPlayer, 3);
-
-}
-
-HookReturnCode DeciderClient(SayParameters@ pParams)
+HookReturnCode Decider(SayParameters@ pParams)
 {
 
   CBasePlayer@ pPlayer = pParams.GetPlayer();
@@ -178,16 +100,20 @@ HookReturnCode RemoveSpecStatus(CBasePlayer@ pPlayer)
 
 /*
 
-
 HookReturnCode PreventRespawn(CBasePlayer@ pPlayer, bool& out bCanRespawn)
 {
-Having issues with below code as it still attempts to respawn player,
-See https://github.com/baso88/SC_AngelScript/issues/49
+
+//Having issues with below code as it still attempts to respawn player,
+//See https://github.com/baso88/SC_AngelScript/issues/49
+  MessageWarnPlayer(pPlayer, "PreventRespawn has a heartbeat!");
 
   if (bSpectatePlease[pPlayer.entindex() - 1])
   {
 
     bCanRespawn = false;
+    MessageWarnPlayer(pPlayer, "Your respawn is turned off?");
+    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
+    g_Scheduler.SetTimeout("SetRespawnTime", .75f, @pPlayer);
     return HOOK_HANDLED;
 
   }
@@ -210,6 +136,7 @@ HookReturnCode CheckSpectate(CBasePlayer@ pPlayer)
   {
 
     pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
+    g_Scheduler.SetTimeout("SetRespawnTime", .75f, @pPlayer);
     return HOOK_HANDLED;
 
   }
@@ -218,12 +145,194 @@ HookReturnCode CheckSpectate(CBasePlayer@ pPlayer)
 
 }
 
-HookReturnCode EndTimerFuncs()
+//Main Functions
+
+void toggleSpectate(const CCommand@ pArguments, CBasePlayer@ pPlayer)
 {
 
-  g_Scheduler.ClearTimerList();
-  @g_pSetRespawn = null;
+  if ( (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) && (pArguments.ArgC() > 1) )
+  {
 
-  return HOOK_HANDLED;
+    //Let admin search for player and put them in or out of Spectate Mode.
+    CBasePlayer@ pTarget = GetTargetPlayer(pArguments.Arg(1));
+
+    if (pTarget is null)
+      MessageWarnPlayer(pPlayer, "The player you entered was not found.");
+    else
+    {
+
+      if (bSpectatePlease[pTarget.entindex() - 1])
+      {
+
+        MessageWarnPlayer(pPlayer, "Moving " + pTarget.pev.netname + " out of Spectate Mode.");
+        ExitSpectate(pTarget);
+
+      }
+      else
+      {
+
+        MessageWarnPlayer(pPlayer, "Moving " + pTarget.pev.netname + " into Spectate Mode.");
+        EnterSpectate(pTarget);
+
+      }
+
+    }
+
+  }
+  else
+  {
+
+    if (bSpectatePlease[pPlayer.entindex() - 1])
+      ExitSpectate(pPlayer);
+    else
+      EnterSpectate(pPlayer);
+
+  }
+
+}
+
+void toggleSpectate(const CCommand@ pArguments)
+{
+
+  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+
+  if ( (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) && (pArguments.ArgC() > 1) )
+  {
+
+    //Let admin search for player and put them in or out of Spectate Mode.
+    CBasePlayer@ pTarget = GetTargetPlayer(pArguments.Arg(1));
+
+    if (pTarget is null)
+      MessageWarnPlayer(pPlayer, "The player you entered was not found.");
+    else
+    {
+
+      if (bSpectatePlease[pTarget.entindex() - 1])
+      {
+
+        MessageWarnPlayer(pPlayer, "Moving " + pTarget.pev.netname + " out of Spectate Mode.");
+        ExitSpectate(pTarget);
+
+      }
+      else
+      {
+
+        MessageWarnPlayer(pPlayer, "Moving " + pTarget.pev.netname + " into Spectate Mode.");
+        EnterSpectate(pTarget);
+
+      }
+
+    }
+
+  }
+  else
+  {
+
+    if (bSpectatePlease[pPlayer.entindex() - 1])
+      ExitSpectate(pPlayer);
+    else
+      EnterSpectate(pPlayer);
+
+  }
+
+}
+
+CBasePlayer@ GetPlayerBySteamId(const string& in szTargetSteamId)
+{
+
+	CBasePlayer@ pTarget;
+
+	for (int iIndex = 1; iIndex <= g_Engine.maxClients; ++iIndex)
+	{
+
+		@pTarget = g_PlayerFuncs.FindPlayerByIndex(iIndex);
+
+		if( pTarget !is null )
+		{
+
+			const string szSteamId = g_EngineFuncs.GetPlayerAuthId(pTarget.edict());
+
+			if(szSteamId == szTargetSteamId)
+				return pTarget;
+
+		}
+
+	}
+
+	return null;
+
+}
+
+CBasePlayer@ GetTargetPlayer(const string& in szNameOrSteamId)
+{
+
+	CBasePlayer@ pTarget = g_PlayerFuncs.FindPlayerByName(szNameOrSteamId, false);
+
+	if(pTarget !is null)
+		return pTarget;
+
+	return GetPlayerBySteamId(szNameOrSteamId);
+}
+
+void SetRespawnTime(CBasePlayer@ pPlayer)
+{
+
+  pPlayer.m_flRespawnDelayTime = MAX_FLOAT;
+  return;
+
+}
+
+void EnterSpectate(CBasePlayer@ pPlayer)
+{
+
+  if (adminOnly && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
+    bSpectatePlease[pPlayer.entindex() - 1] = true;
+  else if (!adminOnly)
+    bSpectatePlease[pPlayer.entindex() - 1] = true;
+
+  if( (!pPlayer.GetObserver().IsObserver()) && (bSpectatePlease[pPlayer.entindex() -1]) )
+  {
+
+    MessageWarnPlayer(pPlayer, "Entering Spectate Mode");
+    pPlayer.GetObserver().StartObserver( pPlayer.pev.origin, pPlayer.pev.angles, false );
+    g_Scheduler.SetTimeout("SetRespawnTime", .75f, @pPlayer);
+
+  }
+
+}
+
+void ExitSpectate(CBasePlayer@ pPlayer)
+{
+
+  MessageWarnPlayer(pPlayer, "Exiting Spectate Mode");
+  bSpectatePlease[pPlayer.entindex() - 1] = false;
+
+  //Reset the player's respawn time by respawning and killing.
+  g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
+  g_AdminControl.KillPlayer(pPlayer, 0); /* Is 0 because we don't want to add more time to mp_respawndelay */
+  pPlayer.m_iDeaths -= 1;
+
+}
+
+void MessageWarnPlayer(CBasePlayer@ pPlayer, string msg)
+{
+
+  g_PlayerFuncs.SayText( pPlayer, "[SM] " + msg + "\n");
+
+}
+
+void MessageWarnAllPlayers(CBasePlayer@ pPlayer, string msg)
+{
+
+  g_PlayerFuncs.SayTextAll( pPlayer, "[SM] " + msg + "\n");
+
+}
+
+
+void RespawnMe(const CCommand@ pArguments)
+{
+
+  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+  g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
 
 }
