@@ -271,7 +271,7 @@ final class AFK_Data
           MessageWarnPlayer(pPlayer, "Moving you back to the game through respawn...");
           isSpectate = false;
           g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
-          g_AdminControl.KillPlayer(pPlayer, int(g_EngineFuncs.CVarGetFloat("mp_respawndelay")) );
+          g_AdminControl.KillPlayer(pPlayer, 0); /* Set to 0 because we don't want to add onto mp_respawndelay */
 
         }
 
