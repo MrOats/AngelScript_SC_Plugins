@@ -517,6 +517,8 @@ void CancelVote(const CCommand@ pArguments)
   g_Scheduler.RemoveTimer(@g_TimeToVote);
   CScheduledFunction@ g_TimeToVote = null;
 
+  ClearRTV();
+
   MessageWarnAllPlayers(pPlayer, "The vote has been cancelled by " + string(rtvdataobj.szPlayerName) );
 
 }
