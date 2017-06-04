@@ -78,6 +78,7 @@ CClientCommand nominate("nominate", "Nominate a Map!", @NomPush);
 CClientCommand forcevote("forcevote", "Lets admin force a vote", @ForceVote, ConCommandFlag::AdminOnly);
 CClientCommand addnominatemap("addnominatemap", "Lets admin add as many nominatable maps as possible", @AddNominateMap, ConCommandFlag::AdminOnly);
 CClientCommand removenominatemap("removenominatemap", "Lets admin add as many nominatable maps as possible", @RemoveNominateMap, ConCommandFlag::AdminOnly);
+CClientCommand cancelrtv("cancelrtv", "Lets admin cancel an ongoing RTV vote", @CancelVote, ConCommandFlag::AdminOnly);
 
 //Global Vars
 
@@ -504,6 +505,19 @@ void RemoveNominateMap(const CCommand@ pArguments)
 
     }
     else MessageWarnPlayer(pPlayer, pArguments.Arg(1) + " was not nominated. Skipping...");
+
+}
+
+void CancelVote(const CCommand@ pArguments)
+{
+
+  CBasePlayer@ pPlayer = g_ConCommandSystem.GetCurrentPlayer();
+  RTV_Data@ rtvdataobj = @rtv_plr_data[pPlayer.entindex() - 1];
+
+  g_Scheduler.RemoveTimer(@g_TimeToVote);
+  CScheduledFunction@ g_TimeToVote = null;
+
+  MessageWarnAllPlayers(pPlayer, "The vote has been cancelled by " + string(rtvdataobj.szPlayerName) );
 
 }
 
