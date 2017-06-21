@@ -15,6 +15,7 @@ final class AFK_Data
 {
 
   private Vector m_lastOrigin;
+  private float m_lastMove;
   private bool m_isSpectate = false;
   private int m_secondsUntilSpec = 0;
   private int m_secondsUntilKick = 0;
@@ -24,12 +25,17 @@ final class AFK_Data
 
   private CScheduledFunction@ initTimer = null;
 
-  //RTV Data Properties
+  //AFK Data Properties
 
   Vector lastOrigin
   {
     get const { return m_lastOrigin; }
     set { m_lastOrigin = value; }
+  }
+  float lastMove
+  {
+    get const { return m_lastMove; }
+    set { m_lastMove = value; }
   }
   bool isSpectate
   {
@@ -85,6 +91,13 @@ final class AFK_Data
 
   }
 
+  void UpdateLastMove()
+  {
+
+    lastMove = pPlayer.m_flLastMove;
+
+  }
+
   void KickPlayer()
   {
 
@@ -111,6 +124,29 @@ final class AFK_Data
     if ( (pPlayer !is null) && (pPlayer.IsConnected()) )
     {
 
+      if (lastMove == pPlayer.m_flLastMove)
+      {
+
+        //Player did not move
+        return false;
+
+      }
+      else
+      {
+
+        //Player moved!
+        return true;
+
+      }
+
+    }
+    else
+      return false;
+
+/*
+    if ( (pPlayer !is null) && (pPlayer.IsConnected()) )
+    {
+
       if (lastOrigin.opEquals(pPlayer.GetOrigin()))
       {
 
@@ -128,6 +164,7 @@ final class AFK_Data
 
     }
     else return false;
+*/
 
   }
 
@@ -203,7 +240,7 @@ final class AFK_Data
 
             }
 
-            UpdateLastOrigin();
+            UpdateLastMove();
 
           }
 
@@ -239,7 +276,7 @@ final class AFK_Data
             }
             else secondsUntilKick -= 1;
 
-            UpdateLastOrigin();
+            UpdateLastMove();
 
           }
 
@@ -275,7 +312,7 @@ final class AFK_Data
 
         }
 
-        UpdateLastOrigin();
+        UpdateLastMove();
 
       }
 
@@ -287,7 +324,7 @@ final class AFK_Data
   {
 
     isSpectate = true;
-    pPlayer.GetObserver().StartObserver( lastOrigin, pPlayer.pev.angles, false );
+    pPlayer.GetObserver().StartObserver( pPlayer.GetOrigin(), pPlayer.pev.angles, false );
     g_Scheduler.SetTimeout("SetRespawnTime", .75f, @pPlayer);
 
   }
@@ -300,7 +337,10 @@ final class AFK_Data
     @m_pPlayer = pPlr;
     m_szSteamID = g_EngineFuncs.GetPlayerAuthId( pPlayer.edict() );
     m_szPlayerName = pPlayer.pev.netname;
-    lastOrigin = pPlayer.GetOrigin();
+    //lastOrigin = pPlayer.GetOrigin();
+    m_lastMove = pPlayer.m_flLastMove;
+    m_secondsUntilSpec = g_SecondsUntilSpec.GetInt();
+    m_secondsUntilKick = g_SecondsUntilKick.GetInt();
 
   }
 
@@ -365,6 +405,7 @@ HookReturnCode AddPlayer(CBasePlayer@ pPlayer)
     AFK_Data@ afkdataobj = AFK_Data(pPlayer);
     @afk_plr_data[pPlayer.entindex() - 1] = @afkdataobj;
 
+    //afkdataobj.UpdateLastMove();
     afkdataobj.Initiate();
 
     return HOOK_HANDLED;
@@ -430,17 +471,34 @@ HookReturnCode ResetVars()
 
 }
 
+CBasePlayer@ PickRandomPlayer()
+{
+
+  CBasePlayer@ pPlayer;
+  for (int i = 1; i <= g_Engine.maxClients; i++)
+  {
+
+    @pPlayer = g_PlayerFuncs.FindPlayerByIndex(i);
+    if ( (pPlayer !is null) && (pPlayer.IsConnected()) )
+      break;
+
+  }
+
+  return @pPlayer;
+
+}
+
 void MessageWarnPlayer(CBasePlayer@ pPlayer, string msg)
 {
 
-  g_PlayerFuncs.SayText( pPlayer, "[AFKM] " + msg + "\n");
+  g_PlayerFuncs.SayText(pPlayer, "[AFKM] " + msg + "\n");
 
 }
 
 void MessageWarnAllPlayers(CBasePlayer@ pPlayer, string msg)
 {
 
-  g_PlayerFuncs.SayTextAll( pPlayer, "[AFKM] " + msg + "\n");
+  g_PlayerFuncs.SayTextAll(pPlayer, "[AFKM] " + msg + "\n");
 
 }
 
