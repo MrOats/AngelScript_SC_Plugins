@@ -8,6 +8,7 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 /*
 Current Status: Stable.
+Documentation: https://github.com/MrOats/AngelScript_SC_Plugins/wiki/InfiniteFlashlight.as
 */
 
 // Globals
@@ -19,7 +20,7 @@ void PluginInit()
 {
 
   g_Module.ScriptInfo.SetAuthor("MrOats");
-  g_Module.ScriptInfo.SetContactInfo("http://forums.svencoop.com/showthread.php/44306-Plugin-SpectateMode");
+  g_Module.ScriptInfo.SetContactInfo("https://forums.svencoop.com/showthread.php/44687-Plugin-Infinite-Flashlight");
   g_Hooks.RegisterHook(Hooks::Game::MapChange,@ResetCVars);
 
   @g_InfiniteFlashLight = CCVar("infiniteFlashlightEnable", true, "Whether or not this plugin should run", ConCommandFlag::AdminOnly);
