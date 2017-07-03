@@ -463,7 +463,8 @@ HookReturnCode ResetVars()
   for (uint i = 0; i < afk_plr_data.length(); i++)
   {
 
-    afk_plr_data[i].ClearInitTimer();
+    if (afk_plr_data[i] !is null)
+      afk_plr_data[i].ClearInitTimer();
 
   }
 
