@@ -948,7 +948,7 @@ void ChooseMap(string chosenMap, bool forcechange)
 
   //After X seconds passed or if CVar WhenToChange is 0
   if (forcechange || (g_WhenToChange.GetInt() == 0) )
-    g_EngineFuncs.ServerCommand("changelevel " + chosenMap + "\n");
+    g_EngineFuncs.ServerCommand("changelevel \"" + chosenMap + "\"\n");
 
   //Change after X Seconds
   if (g_WhenToChange.GetInt() > 0)
@@ -976,8 +976,8 @@ void ChooseMap(string chosenMap, bool forcechange)
     netmsg.WriteString(chosenMap);
     netmsg.End();
     */
-    g_EngineFuncs.ServerCommand("mp_nextmap " + chosenMap + "\n");
-    g_EngineFuncs.ServerCommand("mp_nextmap_cycle " + chosenMap + "\n");
+    g_EngineFuncs.ServerCommand("mp_nextmap \"" + chosenMap + "\"\n");
+    g_EngineFuncs.ServerCommand("mp_nextmap_cycle \"" + chosenMap + "\"\n");
     MessageWarnAllPlayers( PickRandomPlayer(), "Next map has been set to \"" + chosenMap + "\".");
 
   }
