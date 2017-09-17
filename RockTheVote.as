@@ -88,6 +88,7 @@ CTextMenu@ nommenu = null;
 array<RTV_Data@> rtv_plr_data;
 array<string> forcenommaps;
 array<string> prevmaps;
+array<string> maplist;
 
 
 bool isVoting = false;
@@ -141,16 +142,6 @@ void MapActivate()
   @g_TimeToVote = null;
   @g_TimeUntilVote = null;
 
-  //int prevmaps_len = int(prevmaps.length());
-  if (g_ExcludePrevMaps.GetInt() < 0)
-    g_ExcludePrevMaps.SetInt(0);
-
-
-  if ( int(prevmaps.length()) > g_ExcludePrevMaps.GetInt())
-    prevmaps.removeAt(0);
-
-  prevmaps.insertLast(g_Engine.mapname);
-
   rtv_plr_data.resize(g_Engine.maxClients);
   for (uint i = 0; i < rtv_plr_data.length(); i++)
     @rtv_plr_data[i] = null;
@@ -159,6 +150,11 @@ void MapActivate()
     forcenommaps[i] = "";
 
     forcenommaps.resize(0);
+
+  for (uint i = 0; i < maplist.length(); i++)
+    maplist[i] = "";
+
+    maplist.resize(0);
 
   if(@rtvmenu !is null)
   {
@@ -170,6 +166,23 @@ void MapActivate()
     nommenu.Unregister();
     @nommenu = null;
   }
+
+  maplist = GetMapList();
+  /*
+  for (size_t i = 0; i < prevmaps.length();)
+  {
+
+    if (maplist.find(prevmaps[i]) < 0)
+      prevmaps.removeAt(i);
+    else
+      ++i;
+
+  }
+  */
+  //int prevmaps_len = int(prevmaps.length());
+  if (g_ExcludePrevMaps.GetInt() < 0)
+    g_ExcludePrevMaps.SetInt(0);
+
 
   @g_TimeUntilVote = g_Scheduler.SetInterval("DecrementSeconds", 1, g_SecondsUntilVote.GetInt() + 1);
 
@@ -214,6 +227,10 @@ HookReturnCode ResetVars()
   g_Scheduler.ClearTimerList();
   @g_TimeToVote = null;
   @g_TimeUntilVote = null;
+
+  prevmaps.insertLast(g_Engine.mapname);
+  if ( (int(prevmaps.length()) > g_ExcludePrevMaps.GetInt()))
+    prevmaps.removeAt(0);
 
   return HOOK_HANDLED;
 
@@ -560,7 +577,7 @@ void NominateMap( CBasePlayer@ pPlayer, string szMapName )
 
   RTV_Data@ rtvdataobj = @rtv_plr_data[pPlayer.entindex() - 1];
   array<string> mapsNominated = GetNominatedMaps();
-  array<string> mapList = GetMapList();
+  array<string> mapList = maplist;
 
 
   if ( mapList.find( szMapName ) < 0 )
@@ -614,7 +631,7 @@ void NominateMap( CBasePlayer@ pPlayer, string szMapName )
   else
   {
 
-    MessageWarnAllPlayers( pPlayer, rtvdataobj.szPlayerName + " has changed their nomination to \"" + szMapName + "\"." );
+    MessageWarnAllPlayers( pPlayer, rtvdataobj.szPlayerName + " has changed their nomination to \"" + szMapName + "\". " );
     rtvdataobj.szNominatedMap = szMapName;
     return;
 
@@ -644,7 +661,7 @@ void NominateMenu( CBasePlayer@ pPlayer )
       @nommenu = CTextMenu(@nominate_MenuCallback);
       nommenu.SetTitle("Nominate...");
 
-      array<string> mapList = GetMapList();
+      array<string> mapList = maplist;
 
       //Remove any maps found in the previous map exclusion list or force nominated maps
       for (uint i = 0; i < mapList.length();)
@@ -786,7 +803,6 @@ void BeginVote()
 
   array<string> rtvList;
   array<string> mapsNominated = GetNominatedMaps();
-  array<string> templist = GetMapList();
 
   for (uint i = 0; i < forcenommaps.length(); i++)
     rtvList.insertLast(forcenommaps[i]);
@@ -794,42 +810,46 @@ void BeginVote()
   for (uint i = 0; i < mapsNominated.length(); i++)
     rtvList.insertLast(mapsNominated[i]);
 
-
-  //If our given list of maps is less than g_MaxMapsToVote, then fill rtvList with rest of un-nominated list of maps
-  if (int(templist.length()) < g_MaxMapsToVote.GetInt())
+  //Determine how many more maps need to be added to menu
+  int remaining = 0;
+  if(int(maplist.length()) < g_MaxMapsToVote.GetInt() )
   {
 
-    for (uint i = 0; i < templist.length(); i++)
+    //maplist is smaller, use it
+    remaining = int(maplist.length() - (rtvList.length() + prevmaps.length()) );
+
+  }
+  else if (int(maplist.length()) > g_MaxMapsToVote.GetInt() )
+  {
+
+    //MaxMaps is smaller, use it
+    remaining = g_MaxMapsToVote.GetInt() - int(rtvList.length() + prevmaps.length());
+
+  }
+  else if (int(maplist.length()) == g_MaxMapsToVote.GetInt() )
+  {
+
+    //They are same length, use maplist
+    remaining = int(maplist.length() - (rtvList.length() + prevmaps.length()) );
+
+  }
+
+  while (remaining > 0)
+  {
+
+    //Fill rest of menu with random maps
+    string rMap = RandomMap();
+
+    if ( ((rtvList.find(rMap)) < 0) && (prevmaps.find(rMap) < 0))
     {
 
-      if (rtvList.find(templist[i]) < 0)
-      {
-
-        rtvList.insertLast(templist[i]);
-
-      }
+      rtvList.insertLast(rMap);
+      remaining--;
 
     }
 
   }
-  else /* Else fill remaining with randoms*/
-  {
 
-    while ( int(rtvList.length()) < g_MaxMapsToVote.GetInt())
-    {
-
-      string rMap = RandomMap();
-
-      if ( ((rtvList.find(rMap)) < 0) && (prevmaps.find(rMap) < 0))
-      {
-
-        rtvList.insertLast(rMap);
-
-      }
-
-    }
-
-  }
 
   //Give Menus to Vote!
   VoteMenu(rtvList);
@@ -948,8 +968,12 @@ void ChooseMap(string chosenMap, bool forcechange)
 
   //After X seconds passed or if CVar WhenToChange is 0
   if (forcechange || (g_WhenToChange.GetInt() == 0) )
-    g_EngineFuncs.ServerCommand("changelevel \"" + chosenMap + "\"\n");
+  {
 
+    g_Log.PrintF("[RTV] Changing map to \"%1\"\n", chosenMap);
+    g_EngineFuncs.ServerCommand("changelevel " + chosenMap + "\n");
+
+  }
   //Change after X Seconds
   if (g_WhenToChange.GetInt() > 0)
   {
@@ -976,8 +1000,8 @@ void ChooseMap(string chosenMap, bool forcechange)
     netmsg.WriteString(chosenMap);
     netmsg.End();
     */
-    g_EngineFuncs.ServerCommand("mp_nextmap \"" + chosenMap + "\"\n");
-    g_EngineFuncs.ServerCommand("mp_nextmap_cycle \"" + chosenMap + "\"\n");
+    g_EngineFuncs.ServerCommand("mp_nextmap "+ chosenMap + "\n");
+    g_EngineFuncs.ServerCommand("mp_nextmap_cycle "+ chosenMap + "\n");
     MessageWarnAllPlayers( PickRandomPlayer(), "Next map has been set to \"" + chosenMap + "\".");
 
   }
@@ -996,7 +1020,7 @@ int CalculateRequired()
 string RandomMap()
 {
 
-  array<string> mapList = GetMapList();
+  array<string> mapList = maplist;
 
   return mapList[ Math.RandomLong( 0, mapList.length() - 1) ];
 
@@ -1018,6 +1042,7 @@ string RandomMap(array<string> mapList, uint length)
 
 array<string> GetNominatedMaps()
 {
+
   array<string> nommaps;
 
   for (uint i = 0; i < rtv_plr_data.length(); i++)
@@ -1033,6 +1058,7 @@ array<string> GetNominatedMaps()
 
 
   return nommaps;
+
 }
 
 array<string> GetMapList()
@@ -1054,16 +1080,12 @@ array<string> GetMapList()
 
         string sLine;
         file.ReadLine(sLine);
-        string sFix = sLine.SubString(sLine.Length()-1,1);
-
-        if(sFix == " " || sFix == "\n" || sFix == "\r" || sFix == "\t")
-          sLine = sLine.SubString(0, sLine.Length() - 1);
 
         if(sLine.SubString(0,1) == "#" || sLine.IsEmpty())
           continue;
 
-        //g_Game.AlertMessage(at_console, "" + sLine + "\n");
-        //array<string> parsed = sLine.Split(" ");
+        sLine.Trim();
+
         mapList.insertLast(sLine);
 
       }
