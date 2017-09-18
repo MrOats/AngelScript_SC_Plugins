@@ -94,6 +94,8 @@ array<string> maplist;
 bool isVoting = false;
 bool canRTV = false;
 
+int secondsleftforvote = 0;
+
 
 CCVar@ g_SecondsUntilVote;
 CCVar@ g_MapList;
@@ -141,6 +143,7 @@ void MapActivate()
   g_Scheduler.ClearTimerList();
   @g_TimeToVote = null;
   @g_TimeUntilVote = null;
+  secondsleftforvote = g_VotingPeriodTime.GetInt();
 
   rtv_plr_data.resize(g_Engine.maxClients);
   for (uint i = 0; i < rtv_plr_data.length(); i++)
@@ -236,7 +239,6 @@ HookReturnCode ResetVars()
 
 }
 
-
 HookReturnCode DisconnectCleanUp(CBasePlayer@ pPlayer)
 {
 
@@ -273,6 +275,29 @@ void DecrementSeconds()
   {
 
     g_SecondsUntilVote.SetInt(g_SecondsUntilVote.GetInt() - 1);
+
+  }
+
+}
+
+void DecrementVoteSeconds()
+{
+
+  if (secondsleftforvote == 0)
+  {
+
+    PostVote();
+    g_Scheduler.RemoveTimer(g_TimeUntilVote);
+    @g_TimeUntilVote = null;
+    secondsleftforvote = g_VotingPeriodTime.GetInt();
+
+  }
+  else
+  {
+
+    string msg = string(secondsleftforvote) + " seconds left to vote.";
+    g_PlayerFuncs.ClientPrintAll(HUD_PRINTCENTER, msg);
+    secondsleftforvote--;
 
   }
 
@@ -394,14 +419,14 @@ void ForceVote(const CCommand@ pArguments, CBasePlayer@ pPlayer)
     }
 
     VoteMenu(rtvList);
-    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+    @g_TimeToVote = g_Scheduler.SetInterval("DecrementVoteSeconds", 1, g_VotingPeriodTime.GetInt() + 1);
 
   }
   else if (pArguments.ArgC() == 1)
   {
 
     BeginVote();
-    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+    @g_TimeToVote = g_Scheduler.SetInterval("DecrementVoteSeconds", 1, g_VotingPeriodTime.GetInt() + 1);
 
   }
 
@@ -428,14 +453,14 @@ void ForceVote(const CCommand@ pArguments)
     }
 
     VoteMenu(rtvList);
-    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+    @g_TimeToVote = g_Scheduler.SetInterval("DecrementVoteSeconds", 1, g_VotingPeriodTime.GetInt() + 1);
 
   }
   else if (pArguments.ArgC() == 1)
   {
 
     BeginVote();
-    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+    @g_TimeToVote = g_Scheduler.SetInterval("DecrementVoteSeconds", 1,g_VotingPeriodTime.GetInt() + 1);
 
   }
 
@@ -721,7 +746,7 @@ void RockTheVote(CBasePlayer@ pPlayer)
 
     }
 
-    @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+    @g_TimeToVote = g_Scheduler.SetInterval("DecrementVoteSeconds", 1,g_VotingPeriodTime.GetInt() + 1);
 
   }
 
@@ -926,7 +951,7 @@ void PostVote()
 
       ClearVotedMaps();
       MessageWarnAllPlayers( PickRandomPlayer(), "There was a tie! Revoting...");
-      @g_TimeToVote = g_Scheduler.SetTimeout("PostVote", g_VotingPeriodTime.GetInt());
+      @g_TimeToVote = g_Scheduler.SetInterval("DecrementVoteSeconds", 1, g_VotingPeriodTime.GetInt() + 1);
       VoteMenu(candidates);
       return;
 
@@ -950,7 +975,7 @@ void PostVote()
 
     }
     else
-      g_Game.AlertMessage(at_console, "[RTV] Fix your ChooseEnding CVar!\n");
+      g_Log.PrintF("[RTV] Fix your ChooseEnding CVar!\n");
   }
   else
   {
