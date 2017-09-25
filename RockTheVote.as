@@ -71,6 +71,66 @@ final class RTV_Data
 
 }
 
+final class PCG
+{
+
+  private uint64 m_iseed;
+
+  string seed
+  {
+    get const { return m_iseed; }
+  }
+
+  //PCG Functions
+
+  uint nextInt(uint upper)
+  {
+
+    uint threshold = -upper % upper;
+
+    while (true)
+    {
+
+      uint r =  nextInt();
+
+      if (r >= threshold)
+        return r % upper;
+
+    }
+
+    return upper;
+
+  }
+
+
+  uint nextInt()
+  {
+    uint64 oldstate = m_iseed;
+    m_iseed = oldstate * uint64(6364136223846793005) + uint(0);
+    uint xorshifted = ((oldstate >> uint(18)) ^ oldstate) >> uint(27);
+    uint rot = oldstate >> uint(59);
+    return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
+  }
+
+  //PCG Constructors
+
+  PCG(uint64 in_seed)
+  {
+
+    m_iseed = in_seed;
+
+  }
+
+  //Default Constructor
+  PCG()
+  {
+
+    m_iseed = UnixTimestamp();
+
+  }
+
+}
+
 //ClientCommands
 
 CClientCommand rtv("rtv", "Rock the Vote!", @RtvPush);
@@ -90,6 +150,8 @@ array<string> forcenommaps;
 array<string> prevmaps;
 array<string> maplist;
 
+PCG pcg_gen = PCG();
+
 
 bool isVoting = false;
 bool canRTV = false;
@@ -105,6 +167,7 @@ CCVar@ g_VotingPeriodTime;
 CCVar@ g_PercentageRequired;
 CCVar@ g_ChooseEnding;
 CCVar@ g_ExcludePrevMaps;
+CCVar@ g_PlaySounds;
 
 //Global Timers/Schedulers
 
@@ -131,6 +194,35 @@ void PluginInit()
   @g_PercentageRequired = CCVar("iPercentReq", 66, "0-100, percent of players required to RTV before voting happens", ConCommandFlag::AdminOnly);
   @g_ChooseEnding = CCVar("iChooseEnding", 1, "Set to 1 to revote when a tie happens, 2 to choose randomly amongst the ties, 3 to await RTV again", ConCommandFlag::AdminOnly);
   @g_ExcludePrevMaps = CCVar("iExcludePrevMaps", 0, "How many maps to exclude from nomination or voting", ConCommandFlag::AdminOnly);
+  @g_PlaySounds = CCVar("bPlaySounds", 1, "Set to 1 to play sounds, set to 0 to not play sounds", ConCommandFlag::AdminOnly);
+
+}
+
+void MapInit()
+{
+
+  //Precache Sounds
+  //1
+  g_Game.PrecacheGeneric("fvox/one.wav");
+  g_SoundSystem.PrecacheSound("fvox/one.wav");
+  //2
+  g_Game.PrecacheGeneric("fvox/two.wav");
+  g_SoundSystem.PrecacheSound("fvox/two.wav");
+  //3
+  g_Game.PrecacheGeneric("fvox/three.wav");
+  g_SoundSystem.PrecacheSound("fvox/three.wav");
+  //4
+  g_Game.PrecacheGeneric("fvox/four.wav");
+  g_SoundSystem.PrecacheSound("fvox/four.wav");
+  //5
+  g_Game.PrecacheGeneric("fvox/five.wav");
+  g_SoundSystem.PrecacheSound("fvox/five.wav");
+  //10
+  g_Game.PrecacheGeneric("puchi/spportal/tenseconds.wav");
+  g_SoundSystem.PrecacheSound("puchi/spportal/tenseconds.wav");
+  //Time to choose
+  g_Game.PrecacheGeneric("gman/gman_choose1.wav");
+  g_SoundSystem.PrecacheSound("gman/gman_choose1.wav");
 
 }
 
@@ -283,7 +375,85 @@ void DecrementSeconds()
 void DecrementVoteSeconds()
 {
 
-  if (secondsleftforvote == 0)
+  if (secondsleftforvote == g_VotingPeriodTime.GetInt() &&
+      g_PlaySounds.GetBool())
+  {
+
+    CBasePlayer@ pPlayer = PickRandomPlayer();
+    g_SoundSystem.PlaySound(pPlayer.edict(), CHAN_AUTO, "gman/gman_choose1.wav", 1.0f, ATTN_NONE, 0, 100, 0, true, pPlayer.pev.origin);
+
+    string msg = string(secondsleftforvote) + " seconds left to vote.";
+    g_PlayerFuncs.ClientPrintAll(HUD_PRINTCENTER, msg);
+    secondsleftforvote--;
+
+  }
+  else if (secondsleftforvote == 10 && g_PlaySounds.GetBool())
+  {
+
+    CBasePlayer@ pPlayer = PickRandomPlayer();
+    g_SoundSystem.PlaySound(pPlayer.edict(), CHAN_AUTO, "puchi/spportal/tenseconds.wav", 1.0f, ATTN_NONE, 0, 100, 0, true, pPlayer.pev.origin);
+
+    string msg = string(secondsleftforvote) + " seconds left to vote.";
+    g_PlayerFuncs.ClientPrintAll(HUD_PRINTCENTER, msg);
+    secondsleftforvote--;
+
+  }
+  else if (secondsleftforvote == 5 && g_PlaySounds.GetBool())
+  {
+
+    CBasePlayer@ pPlayer = PickRandomPlayer();
+    g_SoundSystem.PlaySound(pPlayer.edict(), CHAN_AUTO, "fvox/five.wav", 1.0f, ATTN_NONE, 0, 100, 0, true, pPlayer.pev.origin);
+
+    string msg = string(secondsleftforvote) + " seconds left to vote.";
+    g_PlayerFuncs.ClientPrintAll(HUD_PRINTCENTER, msg);
+    secondsleftforvote--;
+
+  }
+  else if (secondsleftforvote == 4 && g_PlaySounds.GetBool())
+  {
+
+    CBasePlayer@ pPlayer = PickRandomPlayer();
+    g_SoundSystem.PlaySound(pPlayer.edict(), CHAN_AUTO, "fvox/four.wav", 1.0f, ATTN_NONE, 0, 100, 0, true, pPlayer.pev.origin);
+
+    string msg = string(secondsleftforvote) + " seconds left to vote.";
+    g_PlayerFuncs.ClientPrintAll(HUD_PRINTCENTER, msg);
+    secondsleftforvote--;
+
+  }
+  else if (secondsleftforvote == 3 && g_PlaySounds.GetBool())
+  {
+
+    CBasePlayer@ pPlayer = PickRandomPlayer();
+    g_SoundSystem.PlaySound(pPlayer.edict(), CHAN_AUTO, "fvox/three.wav", 1.0f, ATTN_NONE, 0, 100, 0, true, pPlayer.pev.origin);
+
+    string msg = string(secondsleftforvote) + " seconds left to vote.";
+    g_PlayerFuncs.ClientPrintAll(HUD_PRINTCENTER, msg);
+    secondsleftforvote--;
+
+  }
+  else if (secondsleftforvote == 2 && g_PlaySounds.GetBool())
+  {
+
+    CBasePlayer@ pPlayer = PickRandomPlayer();
+    g_SoundSystem.PlaySound(pPlayer.edict(), CHAN_AUTO, "fvox/two.wav", 1.0f, ATTN_NONE, 0, 100, 0, true, pPlayer.pev.origin);
+
+    string msg = string(secondsleftforvote) + " seconds left to vote.";
+    g_PlayerFuncs.ClientPrintAll(HUD_PRINTCENTER, msg);
+    secondsleftforvote--;
+
+  }
+  else if (secondsleftforvote == 1 && g_PlaySounds.GetBool())
+  {
+
+    CBasePlayer@ pPlayer = PickRandomPlayer();
+    g_SoundSystem.PlaySound(pPlayer.edict(), CHAN_AUTO, "fvox/one.wav", 1.0f, ATTN_NONE, 0, 100, 0, true, pPlayer.pev.origin);
+
+    string msg = string(secondsleftforvote) + " seconds left to vote.";
+    g_PlayerFuncs.ClientPrintAll(HUD_PRINTCENTER, msg);
+    secondsleftforvote--;
+
+  }
+  else if (secondsleftforvote == 0 && g_PlaySounds.GetBool())
   {
 
     PostVote();
@@ -841,21 +1011,21 @@ void BeginVote()
   {
 
     //maplist is smaller, use it
-    remaining = int(maplist.length() - (rtvList.length() + prevmaps.length()) );
+    remaining = int(maplist.length() - rtvList.length());
 
   }
   else if (int(maplist.length()) > g_MaxMapsToVote.GetInt() )
   {
 
     //MaxMaps is smaller, use it
-    remaining = g_MaxMapsToVote.GetInt() - int(rtvList.length() + prevmaps.length());
+    remaining = g_MaxMapsToVote.GetInt() - int(rtvList.length());
 
   }
   else if (int(maplist.length()) == g_MaxMapsToVote.GetInt() )
   {
 
     //They are same length, use maplist
-    remaining = int(maplist.length() - (rtvList.length() + prevmaps.length()) );
+    remaining = int(maplist.length() - rtvList.length());
 
   }
 
@@ -1045,23 +1215,21 @@ int CalculateRequired()
 string RandomMap()
 {
 
-  array<string> mapList = maplist;
-
-  return mapList[ Math.RandomLong( 0, mapList.length() - 1) ];
+  return maplist[pcg_gen.nextInt(maplist.length())];
 
 }
 
 string RandomMap(array<string> mapList)
 {
 
-  return mapList[ Math.RandomLong( 0, mapList.length() - 1) ];
+  return mapList[pcg_gen.nextInt(mapList.length())];
 
 }
 
 string RandomMap(array<string> mapList, uint length)
 {
 
-  return mapList[ Math.RandomLong(0, length) ];
+  return mapList[pcg_gen.nextInt(length)];
 
 }
 
