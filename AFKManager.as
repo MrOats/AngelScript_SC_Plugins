@@ -113,11 +113,11 @@ final class AFK_Data
   void KickPlayer()
   {
 
-    if (  g_KickAdmins.GetBool() &&
-          (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
+    if (g_KickAdmins.GetBool())
     {
 
-      g_EngineFuncs.ServerCommand("kicksteamid \"" + szSteamID + "\"\n");
+      g_Log.PrintF("[AFKM] Kicking \"" + szPlayerName + "\" for being AFK \n");
+      g_EngineFuncs.ServerCommand("kick #" + string(g_EngineFuncs.GetPlayerUserId(pPlayer.edict())) + " \"Kicked for being AFK. You may rejoin\" " + "\n");
       //g_AdminControl.KickPlayer(pPlayer, 1);
 
     }
@@ -125,12 +125,13 @@ final class AFK_Data
               !(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
     {
 
-      g_EngineFuncs.ServerCommand("kicksteamid \"" + szSteamID + "\"\n");
+      g_Log.PrintF("[AFKM] Kicking \"" + szPlayerName + "\" for being AFK \n");
+      g_EngineFuncs.ServerCommand("kick #" + string(g_EngineFuncs.GetPlayerUserId(pPlayer.edict())) + " \"Kicked for being AFK. You may rejoin\"" + "\n");
       //g_AdminControl.KickPlayer(pPlayer, -1);
 
     }
     else
-      g_Log.PrintF("[AFKM] Error Code 8! KickPlayer() could not resolve. ");
+      g_Log.PrintF("[AFKM] Error Code 8! KickPlayer() could not resolve. \n");
 
 
   }
@@ -467,6 +468,7 @@ final class AFK_Data
   void MoveToSpectate()
   {
 
+    g_Log.PrintF("[AFKM] Moving \"" + szPlayerName + "\" to spectate for being AFK. \n");
     afkstatus = AFKSPEC;
     pPlayer.GetObserver().StartObserver( pPlayer.GetOrigin(), pPlayer.pev.angles, false );
     g_Scheduler.SetTimeout("SetRespawnTime", .75f, @pPlayer);
