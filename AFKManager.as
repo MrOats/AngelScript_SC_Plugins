@@ -19,9 +19,11 @@ final class AFK_Data
   private bool m_isSpectate = false;
   private int m_secondsUntilSpec = 0;
   private int m_secondsUntilKick = 0;
+  private int m_secondsLastWarn = 0;
   private CBasePlayer@ m_pPlayer;
   private string m_szPlayerName = "";
   private string m_szSteamID = "";
+  private Status m_afkstatus;
 
   private CScheduledFunction@ initTimer = null;
 
@@ -52,6 +54,11 @@ final class AFK_Data
     get const { return m_secondsUntilKick; }
     set { m_secondsUntilKick = value; }
   }
+  int secondsLastWarn
+  {
+    get const { return m_secondsLastWarn; }
+    set { m_secondsLastWarn = value; }
+  }
   CBasePlayer@ pPlayer
   {
     get const { return m_pPlayer; }
@@ -64,6 +71,11 @@ final class AFK_Data
   string szPlayerName
   {
     get const { return m_szPlayerName; }
+  }
+  Status afkstatus
+  {
+    get const { return m_afkstatus; }
+    set { m_afkstatus = value; }
   }
 
 
@@ -101,20 +113,25 @@ final class AFK_Data
   void KickPlayer()
   {
 
-    if ( g_KickAdmins.GetBool() && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
+    if (  g_KickAdmins.GetBool() &&
+          (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
     {
 
       g_EngineFuncs.ServerCommand("kicksteamid \"" + szSteamID + "\"\n");
       //g_AdminControl.KickPlayer(pPlayer, 1);
 
     }
-    else
+    else if ( !g_KickAdmins.GetBool() &&
+              !(g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
     {
 
       g_EngineFuncs.ServerCommand("kicksteamid \"" + szSteamID + "\"\n");
       //g_AdminControl.KickPlayer(pPlayer, -1);
 
     }
+    else
+      g_Log.PrintF("[AFKM] Error Code 8! KickPlayer() could not resolve. ");
+
 
   }
 
@@ -144,6 +161,9 @@ final class AFK_Data
       return false;
 
 /*
+
+    //Use LastOrigin var instead?
+
     if ( (pPlayer !is null) && (pPlayer.IsConnected()) )
     {
 
@@ -174,156 +194,280 @@ final class AFK_Data
     if ( (pPlayer !is null) && (pPlayer.IsConnected()) )
     {
 
-      if (!HasMoved())
+      if (HasMoved())
       {
 
-        //Player is AFK!
-
-        //If Spectate is Enabled, then move to Spectate First
+        //Reset Vars
 
         if (g_ShouldSpec.GetBool())
-        {
-
-          //We should warn player every few seconds about their AFK Status
-          if ( ((secondsUntilSpec % g_WarnInterval.GetInt()) == 0) && !isSpectate && (secondsUntilSpec != g_SecondsUntilSpec.GetInt()) )
-          {
-
-            MessageWarnPlayer(pPlayer, string(secondsUntilSpec) + " seconds until you are moved to Specate for being AFK.");
-
-          }
-
-          if ( ((secondsUntilKick % g_WarnInterval.GetInt()) == 0) && isSpectate && (secondsUntilKick != g_SecondsUntilKick.GetInt()) && g_ShouldKick.GetBool())
-          {
-
-            MessageWarnPlayer(pPlayer, "Move around a bit if you want to get out of Specate.");
-            MessageWarnPlayer(pPlayer, string(secondsUntilKick) + " seconds until you are kicked for being AFK.");
-
-          }
-
-          //If AFK for X seconds, move to spectate if they aren't already.
-          if ( (secondsUntilSpec <= 0) && !isSpectate)
-          {
-
-            MoveToSpectate();
-            MessageWarnAllPlayers(pPlayer, (szPlayerName + " has been moved to spectate for being AFK."));
-
-          }
-          //If AFK for X seconds, kick them if they have been spectating, if config allows
-          else if ( (secondsUntilKick <= 0) && isSpectate && g_ShouldKick.GetBool() )
-          {
-
-            MessageWarnAllPlayers(pPlayer, (szPlayerName) + " has been kicked for being AFK.");
-            KickPlayer();
-
-          }
-          //Otherwise, decrease their count(s) until AFK action
-          else
-          {
-
-            secondsUntilSpec -= 1;
-
-            if (g_ShouldKick.GetBool())
-            {
-
-              if ( g_KickAdmins.GetBool() && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) && isSpectate)
-              {
-
-                secondsUntilKick -= 1;
-
-              }
-              else if (isSpectate)
-              {
-
-                secondsUntilKick -= 1;
-
-              }
-
-            }
-
-            UpdateLastMove();
-
-          }
-
-        }
-        else /* If no Spectate, then assume kick only */
-        {
-
-          //Again warn players, see above
-          if ( ((secondsUntilKick % g_WarnInterval.GetInt()) == 0))
-          {
-
-            MessageWarnPlayer(pPlayer, string(secondsUntilKick) + " seconds until you are kicked for being AFK.");
-
-          }
-
-          //Kick player if AFK after X seconds
-          if ( secondsUntilKick <= 0)
-          {
-
-            MessageWarnAllPlayers(pPlayer, (szPlayerName) + " has been kicked for being AFK.");
-            KickPlayer();
-
-          }
-          //Otherwise decrease count
-          else
-          {
-
-            if ( g_KickAdmins.GetBool() && (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES) )
-            {
-
-              secondsUntilKick -= 1;
-
-            }
-            else secondsUntilKick -= 1;
-
-            UpdateLastMove();
-
-          }
-
-        }
-
-      }
-      else
-      {
-
-        //Player is not AFK!
-
-        if (g_ShouldSpec.GetBool())
-        {
-
           secondsUntilSpec = g_SecondsUntilSpec.GetInt();
 
-        }
         if (g_ShouldKick.GetBool())
-        {
-
           secondsUntilKick = g_SecondsUntilKick.GetInt();
 
-        }
+        secondsLastWarn = 0;
 
         //Get them out of Spectate because they are not AFK!
-        if (isSpectate)
+        if (afkstatus == AFKSPEC)
         {
 
           MessageWarnPlayer(pPlayer, "Moving you back to the game through respawn...");
-          isSpectate = false;
           g_PlayerFuncs.RespawnPlayer(pPlayer, true, true);
           g_AdminControl.KillPlayer(pPlayer, 0); /* Set to 0 because we don't want to add onto mp_respawndelay */
 
         }
 
+        //Set status back to NOTAFK
+        afkstatus = NOTAFK;
+
         UpdateLastMove();
 
       }
+      else if (!HasMoved())
+      {
 
-    }
+        //Set player's status to AFK if they haven't been set anything yet
+        if (afkstatus < AFKALIVE)
+          afkstatus = AFKALIVE;
+
+        if (g_ShouldSpec.GetBool())
+        {
+
+          if (afkstatus == AFKALIVE)
+          {
+
+            if (secondsUntilSpec == 0)
+            {
+
+              MoveToSpectate();
+              MessageWarnAllPlayers(pPlayer, (szPlayerName + " has been moved to spectate for being AFK."));
+              MessageWarnPlayer(pPlayer, "Move around a bit if you want to get out of Specate.");
+              secondsLastWarn = 0;
+
+            }
+            else if (secondsLastWarn == g_WarnInterval.GetInt())
+            {
+
+              MessageWarnPlayer(pPlayer, string(secondsUntilSpec) + " seconds until you are moved to Specate for being AFK.");
+              secondsLastWarn = 0;
+
+            }
+
+            //Decrease time until moving to Spectate, and increase warning time
+            secondsUntilSpec -= 1;
+            secondsLastWarn += 1;
+
+
+          }
+          else if (afkstatus == AFKSPEC)
+          {
+
+            if (secondsUntilKick == 0)
+            {
+
+              MessageWarnAllPlayers(pPlayer, (szPlayerName) + " has been kicked for being AFK.");
+              KickPlayer();
+
+            }
+            else if (secondsLastWarn == g_WarnInterval.GetInt())
+            {
+
+              //Make sure to warn properly based on KickAdmin and ShouldKick CVar
+              if (g_ShouldKick.GetBool())
+              {
+
+                if (g_KickAdmins.GetBool())
+                {
+
+                  MessageWarnPlayer(pPlayer, "Move around a bit if you want to get out of Specate.");
+                  MessageWarnPlayer(pPlayer, string(secondsUntilKick) + " seconds until you are kicked for being AFK.");
+                  secondsLastWarn = 0;
+
+                }
+                else if (!g_KickAdmins.GetBool())
+                {
+
+                  if (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES)
+                  {
+
+                    MessageWarnPlayer(pPlayer, "Move around a bit if you want to get out of Specate.");
+                    secondsLastWarn = 0;
+
+                  }
+                  else
+                  {
+
+                    MessageWarnPlayer(pPlayer, "Move around a bit if you want to get out of Specate.");
+                    MessageWarnPlayer(pPlayer, string(secondsUntilKick) + " seconds until you are kicked for being AFK.");
+                    secondsLastWarn = 0;
+
+                  }
+
+                }
+                else
+                  g_Log.PrintF("[AFKM] Error Code 5! KickAdmins CVar configured incorrectly.\n");
+
+              }
+              else if (!g_ShouldKick.GetBool())
+              {
+
+                MessageWarnPlayer(pPlayer, "Move around a bit if you want to get out of Specate.");
+                secondsLastWarn = 0;
+
+              }
+              else
+                g_Log.PrintF("[AFKM] Error Code 10! ShouldKick CVar configured incorrectly.\n");
+
+
+            }
+
+            //Handle seconds variables based on AdminLevel and ShouldKick CVar
+            if (g_ShouldKick.GetBool())
+            {
+
+              if (g_KickAdmins.GetBool())
+              {
+
+                secondsUntilKick -= 1;
+                secondsLastWarn += 1;
+
+              }
+              else if (!g_KickAdmins.GetBool())
+              {
+
+                if (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES)
+                {
+
+                  secondsLastWarn += 1;
+
+                }
+                else
+                {
+
+                  secondsUntilKick -= 1;
+                  secondsLastWarn += 1;
+
+                }
+
+              }
+              else
+                g_Log.PrintF("[AFKM] Error Code 5! KickAdmins CVar configured incorrectly.\n");
+
+            }
+            else if (!g_ShouldKick.GetBool())
+            {
+
+              secondsLastWarn += 1;
+
+            }
+            else
+              g_Log.PrintF("[AFKM] Error Code 10! ShouldKick CVar configured incorrectly.\n");
+
+          }
+          else
+            g_Log.PrintF("[AFKM] Error Code 4! Player's status was not set to AFK??\n");
+
+          UpdateLastMove();
+
+        }
+        else if (g_ShouldKick.GetBool())
+        {
+
+          if (secondsUntilKick == 0)
+          {
+
+            MessageWarnAllPlayers(pPlayer, (szPlayerName) + " has been kicked for being AFK.");
+            KickPlayer();
+
+          }
+          else if (secondsLastWarn == g_WarnInterval.GetInt())
+          {
+
+            //Make sure to warn properly based on KickAdmin config
+
+            if (g_KickAdmins.GetBool())
+            {
+
+              MessageWarnPlayer(pPlayer, string(secondsUntilKick) + " seconds until you are kicked for being AFK.");
+              secondsLastWarn = 0;
+
+            }
+            else if (!g_KickAdmins.GetBool())
+            {
+
+              if (g_PlayerFuncs.AdminLevel(pPlayer) < ADMIN_YES)
+              {
+
+                MessageWarnPlayer(pPlayer, string(secondsUntilKick) + " seconds until you are kicked for being AFK.");
+                secondsLastWarn = 0;
+
+              }
+              else if (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES)
+              {
+
+                //Understandable, have a great day.
+
+                //MessageWarnPlayer(pPlayer, "You are now AFK, but no action will be taken against you.");
+                //secondsLastWarn = 0;
+
+              }
+
+            }
+            else
+              g_Log.PrintF("[AFKM] Error Code 5! KickAdmins CVar configured incorrectly.\n");
+
+
+          }
+
+          //Handle seconds variables based on AdminLevel and CVar
+          if (g_KickAdmins.GetBool())
+          {
+
+            secondsUntilKick -= 1;
+            secondsLastWarn += 1;
+
+          }
+          else if (!g_KickAdmins.GetBool())
+          {
+
+            if (g_PlayerFuncs.AdminLevel(pPlayer) >= ADMIN_YES)
+            {
+
+              secondsLastWarn += 1;
+
+            }
+            else
+            {
+
+              secondsUntilKick -= 1;
+              secondsLastWarn += 1;
+
+            }
+
+          }
+          else
+            g_Log.PrintF("[AFKM] Error Code 5! KickAdmins CVar configured incorrectly.\n");
+
+          UpdateLastMove();
+
+        }
+        else
+          g_Log.PrintF("[AFKM] Error Code 1! ShouldSpec or ShouldKick has been configured incorrectly. One of them needs to be true.\n");
+
+      }
+      else
+        g_Log.PrintF("[AFKM] Error Code 2! Could not determine if player has moved. Null pointer?\n");
+
+      }
+    else
+      g_Log.PrintF("[AFKM] Error Code 3! Player not found, null pointer! Failed to remove object data?\n");
 
   }
 
   void MoveToSpectate()
   {
 
-    isSpectate = true;
+    afkstatus = AFKSPEC;
     pPlayer.GetObserver().StartObserver( pPlayer.GetOrigin(), pPlayer.pev.angles, false );
     g_Scheduler.SetTimeout("SetRespawnTime", .75f, @pPlayer);
 
@@ -341,6 +485,9 @@ final class AFK_Data
     m_lastMove = pPlayer.m_flLastMove;
     m_secondsUntilSpec = g_SecondsUntilSpec.GetInt();
     m_secondsUntilKick = g_SecondsUntilKick.GetInt();
+    m_secondsLastWarn = 0;
+    m_afkstatus = NOTAFK;
+
 
   }
 
@@ -363,6 +510,13 @@ CCVar@ g_ShouldKick;
 CCVar@ g_SecondsUntilKick;
 CCVar@ g_KickAdmins;
 CCVar@ g_WarnInterval;
+
+enum Status
+{
+  NOTAFK,
+  AFKALIVE,
+  AFKSPEC
+}
 
 //Begin!
 
